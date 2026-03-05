@@ -58,6 +58,34 @@ tailwind.config = {
   .search-input:focus { outline: none; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); }
 
   .stat-number { font-variant-numeric: tabular-nums; }
+
+  /* Graph view */
+  #graph-canvas { display: block; width: 100%; height: calc(100vh - 72px); cursor: grab; }
+  #graph-canvas:active { cursor: grabbing; }
+  #graph-canvas.dragging-node { cursor: grabbing; }
+
+  .graph-tooltip { position: fixed; z-index: 100; background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; pointer-events: none; max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+  .graph-tooltip h4 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .graph-tooltip p { font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5; }
+  .graph-tooltip .tt-subs { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 3px; }
+  .graph-tooltip .tt-sub { font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.05); color: #64748b; }
+
+  .view-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.06); }
+  .view-toggle button { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 500; color: #64748b; background: transparent; border: none; cursor: pointer; transition: all 0.15s; }
+  .view-toggle button.active { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+  .view-toggle button:hover:not(.active) { color: #94a3b8; }
+
+  .graph-legend { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 16px; font-size: 11px; color: #64748b; z-index: 10; }
+  .graph-legend span { display: flex; align-items: center; gap: 5px; }
+
+  .graph-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 4px; z-index: 10; }
+  .graph-controls button { width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .graph-controls button:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+
+  .graph-filter-bar { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 4px; flex-wrap: wrap; z-index: 10; }
+  .graph-filter-chip { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 500; cursor: pointer; border: 1px solid; transition: all 0.15s; opacity: 0.5; }
+  .graph-filter-chip.active { opacity: 1; }
+  .graph-filter-chip:hover { opacity: 0.85; }
 </style>
 </head>
 <body class="min-h-screen">
@@ -687,13 +715,329 @@ const SKILL_GRAPH = [
 
 // ─── STATE ────────────────────────────────────────────────────────────
 let state = {
-  view: 'overview', // 'overview' | 'pod' | 'role'
+  view: 'overview', // 'overview' | 'pod' | 'role' | 'graph'
   activePod: null,
   activeRole: null,
   expandedSkills: {},
   gifs: JSON.parse(localStorage.getItem('skillGraphGifs') || '{}'),
   search: '',
+  graphFilter: null, // null = all pods, or pod id
 };
+
+// ─── GRAPH ENGINE ─────────────────────────────────────────────────────
+let graphSim = null;
+
+function buildGraphData(filterPodId) {
+  const nodes = [];
+  const edges = [];
+  const pods = filterPodId ? SKILL_GRAPH.filter(p => p.id === filterPodId) : SKILL_GRAPH;
+
+  pods.forEach(pod => {
+    nodes.push({ id: pod.id, label: pod.name, type: 'pod', color: pod.color, r: 24, desc: pod.description });
+    pod.roles.forEach(role => {
+      const roleId = role.id;
+      nodes.push({ id: roleId, label: role.name, type: 'role', color: pod.color, r: 10, parentPod: pod.id });
+      edges.push({ source: pod.id, target: roleId });
+      role.skills.forEach(skill => {
+        nodes.push({ id: skill.id, label: skill.name, type: 'skill', color: pod.color, r: 4.5, subs: skill.subs, parentRole: roleId, parentPod: pod.id });
+        edges.push({ source: roleId, target: skill.id });
+      });
+    });
+  });
+  return { nodes, edges };
+}
+
+function initGraph(filterPodId) {
+  const { nodes, edges } = buildGraphData(filterPodId);
+  const canvas = document.getElementById('graph-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  let W, H;
+
+  function resize() {
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+
+  // Position nodes
+  const cx = W / 2, cy = H / 2;
+  const podCount = nodes.filter(n => n.type === 'pod').length;
+  let podIdx = 0;
+  const nodeMap = {};
+  nodes.forEach(n => {
+    nodeMap[n.id] = n;
+    if (n.type === 'pod') {
+      const angle = (podIdx / podCount) * Math.PI * 2 - Math.PI / 2;
+      const spread = Math.min(W, H) * 0.3;
+      n.x = cx + Math.cos(angle) * spread;
+      n.y = cy + Math.sin(angle) * spread;
+      podIdx++;
+    } else if (n.type === 'role') {
+      const parent = nodeMap[n.parentPod];
+      n.x = parent.x + (Math.random() - 0.5) * 120;
+      n.y = parent.y + (Math.random() - 0.5) * 120;
+    } else {
+      const parent = nodeMap[n.parentRole];
+      n.x = parent ? parent.x + (Math.random() - 0.5) * 80 : cx + (Math.random() - 0.5) * 200;
+      n.y = parent ? parent.y + (Math.random() - 0.5) * 80 : cy + (Math.random() - 0.5) * 200;
+    }
+    n.vx = 0; n.vy = 0;
+  });
+
+  // Edge source/target to objects
+  const edgeObjs = edges.map(e => ({ source: nodeMap[e.source], target: nodeMap[e.target] }));
+
+  // Camera
+  let camX = 0, camY = 0, zoom = 1;
+  let dragging = false, dragNode = null, lastMouse = null;
+  let hoveredNode = null;
+
+  // Simulation
+  const alpha = { value: 1 };
+  const alphaDecay = 0.003;
+  const alphaMin = 0.005;
+  let running = true;
+
+  function simulate() {
+    if (alpha.value < alphaMin) { running = false; draw(); return; }
+    alpha.value *= (1 - alphaDecay);
+
+    // Repulsion (Barnes-Hut simplified — pairwise for this scale)
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y;
+        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        const minDist = (a.r + b.r) * 3 + 30;
+        if (dist < minDist) dist = minDist;
+        const strength = -800 / (dist * dist);
+        const fx = dx / dist * strength * alpha.value;
+        const fy = dy / dist * strength * alpha.value;
+        a.vx -= fx; a.vy -= fy;
+        b.vx += fx; b.vy += fy;
+      }
+    }
+
+    // Attraction along edges
+    edgeObjs.forEach(e => {
+      const dx = e.target.x - e.source.x;
+      const dy = e.target.y - e.source.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const idealLen = e.source.type === 'pod' ? 140 : 70;
+      const strength = (dist - idealLen) * 0.03 * alpha.value;
+      const fx = dx / dist * strength;
+      const fy = dy / dist * strength;
+      e.source.vx += fx; e.source.vy += fy;
+      e.target.vx -= fx; e.target.vy -= fy;
+    });
+
+    // Center gravity
+    nodes.forEach(n => {
+      n.vx += (cx - n.x) * 0.0005 * alpha.value;
+      n.vy += (cy - n.y) * 0.0005 * alpha.value;
+    });
+
+    // Apply velocity with damping
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.vx *= 0.6; n.vy *= 0.6;
+      n.x += n.vx; n.y += n.vy;
+    });
+
+    draw();
+    if (running) requestAnimationFrame(simulate);
+  }
+
+  function worldToScreen(wx, wy) {
+    return [(wx - camX) * zoom + W / 2, (wy - camY) * zoom + H / 2];
+  }
+  function screenToWorld(sx, sy) {
+    return [(sx - W / 2) / zoom + camX, (sy - H / 2) / zoom + camY];
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    ctx.translate(W / 2, H / 2);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-camX, -camY);
+
+    // Edges
+    edgeObjs.forEach(e => {
+      ctx.beginPath();
+      ctx.moveTo(e.source.x, e.source.y);
+      ctx.lineTo(e.target.x, e.target.y);
+      ctx.strokeStyle = e.source.color + '18';
+      ctx.lineWidth = e.target.type === 'skill' ? 0.5 : 1;
+      ctx.stroke();
+    });
+
+    // Nodes
+    nodes.forEach(n => {
+      const isHovered = hoveredNode === n;
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r * (isHovered ? 1.3 : 1), 0, Math.PI * 2);
+      if (n.type === 'pod') {
+        ctx.fillStyle = n.color;
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = isHovered ? 20 : 10;
+      } else if (n.type === 'role') {
+        ctx.fillStyle = n.color + 'aa';
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = isHovered ? 12 : 4;
+      } else {
+        ctx.fillStyle = n.color + '55';
+        ctx.shadowBlur = 0;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Labels for pods always, roles if zoomed or hovered
+      if (n.type === 'pod' || (n.type === 'role' && (zoom > 0.8 || isHovered)) || (n.type === 'skill' && (zoom > 2 || isHovered))) {
+        ctx.font = n.type === 'pod' ? '600 11px Inter, sans-serif' : n.type === 'role' ? '500 9px Inter, sans-serif' : '400 7px Inter, sans-serif';
+        ctx.fillStyle = n.type === 'pod' ? '#fff' : n.type === 'role' ? '#cbd5e1' : '#64748b';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const label = n.label.length > 28 ? n.label.slice(0, 26) + '...' : n.label;
+        ctx.fillText(label, n.x, n.y + n.r + 4);
+      }
+    });
+
+    ctx.restore();
+  }
+
+  // Tooltip
+  const tooltip = document.getElementById('graph-tooltip');
+  function showTooltip(node, mx, my) {
+    let html = `<h4 style="color:${node.color}">${node.label}</h4>`;
+    if (node.type === 'pod') html += `<p>${node.desc}</p>`;
+    if (node.type === 'skill' && node.subs) {
+      html += `<div class="tt-subs">${node.subs.map(s => `<span class="tt-sub">${s}</span>`).join('')}</div>`;
+    }
+    const typeLabel = node.type === 'pod' ? 'Pod' : node.type === 'role' ? 'Role' : 'Skill';
+    html = `<p style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px">${typeLabel}</p>` + html;
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    const tx = Math.min(mx + 16, W - 340);
+    const ty = Math.min(my + 16, H - 200);
+    tooltip.style.left = tx + 'px';
+    tooltip.style.top = ty + 'px';
+  }
+  function hideTooltip() { tooltip.style.display = 'none'; }
+
+  function findNode(sx, sy) {
+    const [wx, wy] = screenToWorld(sx, sy);
+    let best = null, bestDist = Infinity;
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      const dx = wx - n.x, dy = wy - n.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const hitR = Math.max(n.r * 1.5, 8) / zoom;
+      if (dist < hitR && dist < bestDist) { best = n; bestDist = dist; }
+    }
+    return best;
+  }
+
+  // Mouse events
+  canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const node = findNode(mx, my);
+    if (node) {
+      dragNode = node;
+      canvas.classList.add('dragging-node');
+      alpha.value = 0.3;
+      if (!running) { running = true; simulate(); }
+    } else {
+      dragging = true;
+    }
+    lastMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+
+    if (dragNode) {
+      const [wx, wy] = screenToWorld(mx, my);
+      dragNode.x = wx; dragNode.y = wy;
+      dragNode.vx = 0; dragNode.vy = 0;
+      if (!running) draw();
+    } else if (dragging && lastMouse) {
+      const dx = (e.clientX - lastMouse.x) / zoom;
+      const dy = (e.clientY - lastMouse.y) / zoom;
+      camX -= dx; camY -= dy;
+      lastMouse = { x: e.clientX, y: e.clientY };
+      if (!running) draw();
+    } else {
+      const node = findNode(mx, my);
+      if (node !== hoveredNode) {
+        hoveredNode = node;
+        if (node) showTooltip(node, e.clientX, e.clientY);
+        else hideTooltip();
+        if (!running) draw();
+      } else if (node) {
+        showTooltip(node, e.clientX, e.clientY);
+      }
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    dragging = false;
+    dragNode = null;
+    lastMouse = null;
+    canvas.classList.remove('dragging-node');
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    dragging = false; dragNode = null; lastMouse = null; hoveredNode = null;
+    hideTooltip();
+    canvas.classList.remove('dragging-node');
+    if (!running) draw();
+  });
+
+  canvas.addEventListener('wheel', e => {
+    e.preventDefault();
+    const zoomFactor = e.deltaY > 0 ? 0.92 : 1.08;
+    zoom = Math.max(0.15, Math.min(8, zoom * zoomFactor));
+    if (!running) draw();
+  }, { passive: false });
+
+  canvas.addEventListener('dblclick', e => {
+    const rect = canvas.getBoundingClientRect();
+    const node = findNode(e.clientX - rect.left, e.clientY - rect.top);
+    if (node) {
+      if (node.type === 'pod') {
+        setState({ view: 'pod', activePod: node.id, search: '' });
+      } else if (node.type === 'role') {
+        setState({ view: 'role', activePod: node.parentPod, activeRole: node.id, search: '' });
+      } else if (node.type === 'skill') {
+        setState({ view: 'role', activePod: node.parentPod, activeRole: node.parentRole, search: '' });
+        setTimeout(() => setState({ expandedSkills: { ...state.expandedSkills, [node.id]: true } }), 50);
+      }
+    }
+  });
+
+  // Zoom controls
+  window.graphZoomIn = () => { zoom = Math.min(8, zoom * 1.3); if (!running) draw(); };
+  window.graphZoomOut = () => { zoom = Math.max(0.15, zoom * 0.7); if (!running) draw(); };
+  window.graphReset = () => { zoom = 1; camX = 0; camY = 0; alpha.value = 1; if (!running) { running = true; simulate(); } else draw(); };
+
+  // Window resize
+  const onResize = () => { resize(); if (!running) draw(); };
+  window.addEventListener('resize', onResize);
+
+  // Cleanup reference
+  graphSim = { stop: () => { running = false; window.removeEventListener('resize', onResize); } };
+
+  // Start
+  simulate();
+}
 
 function setState(updates) {
   Object.assign(state, updates);
@@ -817,6 +1161,10 @@ function renderHeader() {
               <span><span class="stat-number text-white font-semibold">${stats.skills}</span> skills</span>
               <span class="text-slate-700">|</span>
               <span><span class="stat-number text-white font-semibold">${stats.subs}</span> atomic competencies</span>
+            </div>
+            <div class="view-toggle">
+              <button class="${state.view !== 'graph' ? 'active' : ''}" onclick="if(state.view==='graph'){setState({view:'overview',activePod:null,activeRole:null})}">Cards</button>
+              <button class="${state.view === 'graph' ? 'active' : ''}" onclick="setState({view:'graph',activePod:null,activeRole:null,search:''})">Graph</button>
             </div>
             <input
               type="text"
@@ -1046,8 +1394,37 @@ function renderSearch() {
   `;
 }
 
+function renderGraph() {
+  const filterChips = SKILL_GRAPH.map(pod => {
+    const isActive = !state.graphFilter || state.graphFilter === pod.id;
+    return `<span class="graph-filter-chip ${isActive ? 'active' : ''}" style="background: ${pod.color}15; color: ${pod.color}; border-color: ${pod.color}44" onclick="event.stopPropagation(); setState({ graphFilter: state.graphFilter === '${pod.id}' ? null : '${pod.id}', view: 'graph' })">${pod.name}</span>`;
+  }).join('');
+
+  return `
+    <div class="relative" style="height: calc(100vh - 72px)">
+      <div class="graph-filter-bar">${filterChips}</div>
+      <canvas id="graph-canvas"></canvas>
+      <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+      <div class="graph-legend">
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6366f1"></span> Pod</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1aa"></span> Role</span>
+        <span><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#6366f155"></span> Skill</span>
+        <span style="color:#475569">Scroll to zoom &middot; Drag to pan &middot; Drag nodes &middot; Double-click to open</span>
+      </div>
+      <div class="graph-controls">
+        <button onclick="graphZoomIn()" title="Zoom in">+</button>
+        <button onclick="graphZoomOut()" title="Zoom out">&minus;</button>
+        <button onclick="graphReset()" title="Reset">&#8634;</button>
+      </div>
+    </div>
+  `;
+}
+
 // ─── MAIN RENDER ──────────────────────────────────────────────────────
 function render() {
+  // Stop previous graph simulation
+  if (graphSim) { graphSim.stop(); graphSim = null; }
+
   let content = '';
   if (state.search && state.search.length >= 2) {
     content = renderSearch();
@@ -1056,11 +1433,17 @@ function render() {
       case 'overview': content = renderOverview(); break;
       case 'pod': content = renderPod(); break;
       case 'role': content = renderRole(); break;
+      case 'graph': content = renderGraph(); break;
       default: content = renderOverview();
     }
   }
 
   document.getElementById('app').innerHTML = renderHeader() + `<main>${content}</main>`;
+
+  // Init graph if in graph view
+  if (state.view === 'graph' && !state.search) {
+    requestAnimationFrame(() => initGraph(state.graphFilter));
+  }
 
   // Setup gif upload zones after render
   requestAnimationFrame(() => {
@@ -1075,6 +1458,7 @@ function render() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (state.search) { setState({ search: '' }); return; }
+    if (state.view === 'graph') { setState({ view: 'overview', activePod: null, activeRole: null }); return; }
     if (state.view === 'role') { setState({ view: 'pod', activeRole: null }); return; }
     if (state.view === 'pod') { setState({ view: 'overview', activePod: null }); return; }
   }
