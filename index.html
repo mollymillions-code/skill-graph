@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marketing Skill Graph</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+      colors: {
+        surface: { 50: '#f8fafc', 100: '#f1f5f9', 200: '#e2e8f0', 700: '#334155', 800: '#1e293b', 900: '#0f172a', 950: '#020617' },
+      }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { background: #080b12; color: #e2e8f0; font-family: 'Inter', system-ui, sans-serif; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+  .pod-card { transition: all 0.2s ease; border: 1px solid rgba(255,255,255,0.06); }
+  .pod-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+
+  .skill-node { transition: all 0.15s ease; }
+  .skill-node:hover { background: rgba(255,255,255,0.04); }
+
+  .sub-skill-tag { font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); color: #94a3b8; transition: all 0.15s; }
+  .sub-skill-tag:hover { background: rgba(255,255,255,0.08); color: #cbd5e1; }
+
+  .gif-zone { border: 1px dashed rgba(255,255,255,0.12); border-radius: 6px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
+  .gif-zone:hover, .gif-zone.dragover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.02); }
+  .gif-zone img { width: 100%; height: 100%; object-fit: cover; border-radius: 5px; }
+
+  .breadcrumb-item { color: #64748b; transition: color 0.15s; cursor: pointer; }
+  .breadcrumb-item:hover { color: #e2e8f0; }
+  .breadcrumb-sep { color: #334155; margin: 0 6px; }
+
+  .tree-line { position: absolute; left: 16px; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.06); }
+  .tree-branch { position: absolute; left: 16px; top: 50%; width: 16px; height: 1px; background: rgba(255,255,255,0.06); }
+
+  .count-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+
+  .view-fade-in { animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  .expand-content { overflow: hidden; transition: max-height 0.25s ease, opacity 0.2s ease; max-height: 0; opacity: 0; }
+  .expand-content.open { max-height: 2000px; opacity: 1; }
+
+  .search-input { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+  .search-input:focus { outline: none; border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); }
+
+  .stat-number { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<div id="app"></div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────
+const SKILL_GRAPH = [
+  {
+    id: 'brand-strategy',
+    name: 'Brand & Strategy',
+    color: '#6366f1',
+    description: 'Positioning, messaging, GTM, and growth architecture',
+    roles: [
+      {
+        id: 'brand-strategist',
+        name: 'Brand Strategist',
+        skills: [
+          { id: 'market-research', name: 'Market Research & Competitive Analysis', subs: ['Competitor audits (positioning, pricing, messaging)', 'TAM / SAM / SOM sizing', 'Customer persona development (demographics, psychographics, JTBD)', 'Cultural trend sensing (subcultures, societal shifts)'] },
+          { id: 'brand-positioning', name: 'Brand Positioning & Architecture', subs: ['Positioning statement crafting', 'Brand archetype selection', 'Multi-brand / sub-brand hierarchy design', 'Category creation strategy'] },
+          { id: 'messaging-frameworks', name: 'Messaging Frameworks', subs: ['Core message development (taglines, value props)', 'Key message mapping per audience segment', 'Tone-of-voice guidelines', 'Narrative arc (origin story, founder story, mission story)'] },
+          { id: 'brand-governance', name: 'Brand Identity Governance', subs: ['Brand guidelines creation & enforcement', 'Cross-channel consistency auditing', 'Internal brand training & evangelism'] },
+        ]
+      },
+      {
+        id: 'growth-strategist',
+        name: 'Marketing Strategist / Head of Growth',
+        skills: [
+          { id: 'gtm', name: 'Go-to-Market Planning', subs: ['Launch sequencing (pre-launch, launch, post-launch)', 'Channel-market fit analysis', 'Pricing strategy (anchoring, bundling, freemium)'] },
+          { id: 'growth-modeling', name: 'Growth Modeling', subs: ['Funnel architecture (AARRR / AIDA / Flywheel)', 'Unit economics (CAC, LTV, payback period)', 'Cohort analysis & retention curves'] },
+          { id: 'budget-allocation', name: 'Budget Allocation & Forecasting', subs: ['Channel ROI modeling', 'Diminishing returns analysis per channel', 'Quarterly budget rebalancing'] },
+          { id: 'ai-martech', name: 'AI & MarTech Stack Architecture', subs: ['Tool selection & integration mapping', 'Workflow automation design', 'Prompt engineering for marketing AI'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'content-creative',
+    name: 'Content & Creative',
+    color: '#f43f5e',
+    description: 'Copywriting, design, video, photography, and content strategy',
+    roles: [
+      {
+        id: 'content-strategist',
+        name: 'Content Strategist',
+        skills: [
+          { id: 'content-architecture', name: 'Content Architecture', subs: ['Content pillar definition (topic clusters)', 'Editorial calendar design', 'Content gap analysis vs. competitors', 'Content lifecycle (create > distribute > repurpose > retire)'] },
+          { id: 'narrative-design', name: 'Audience-First Narrative Design', subs: ['User intent mapping per funnel stage', 'Content-channel fit', 'Storytelling frameworks (hero\'s journey, PAS)'] },
+          { id: 'content-ops', name: 'Content Operations', subs: ['Freelancer / agency management', 'Style guide enforcement', 'Content governance & approval workflows'] },
+        ]
+      },
+      {
+        id: 'copywriter-brand',
+        name: 'Copywriter (Long-Form / Brand)',
+        skills: [
+          { id: 'persuasive-writing', name: 'Persuasive Writing', subs: ['Headline formulas (curiosity gap, benefit-driven)', 'Hook writing (first-line retention)', 'CTA optimization (action verbs, urgency, specificity)'] },
+          { id: 'seo-writing', name: 'SEO Writing', subs: ['Keyword integration (natural density, semantic clustering)', 'Meta title & description writing', 'Internal linking strategy within content'] },
+          { id: 'format-mastery', name: 'Format Mastery', subs: ['Blog posts, whitepapers, case studies', 'Email sequences (welcome, nurture, re-engagement)', 'Website copy (landing pages, about, product pages)'] },
+          { id: 'voice-adaptation', name: 'Voice Adaptation', subs: ['Writing in multiple brand voices', 'Audience register shifting (B2B formal vs B2C casual)', 'Localization awareness (cultural nuance)'] },
+        ]
+      },
+      {
+        id: 'ad-copywriter',
+        name: 'Ad Copywriter / Direct Response',
+        skills: [
+          { id: 'platform-native-copy', name: 'Platform-Native Ad Copy', subs: ['Meta ad copy (primary text, headline, description)', 'Google Ads copy (RSA, character limits)', 'YouTube ad scripts (hook in 5 seconds)', 'LinkedIn sponsored content copy', 'TikTok script writing (native, trend-aware)'] },
+          { id: 'dr-techniques', name: 'Direct Response Techniques', subs: ['AIDA (Attention-Interest-Desire-Action)', 'PAS (Problem-Agitate-Solve)', 'Before-After-Bridge', 'Social proof integration'] },
+          { id: 'ad-variation', name: 'Ad Variation & Testing', subs: ['Writing 10-20 variations per concept', 'Angle rotation (pain, benefit, curiosity, fear, aspiration)', 'Swipe file maintenance & competitive ad analysis'] },
+          { id: 'ad-compliance', name: 'Compliance & Platform Policy', subs: ['Ad platform policy knowledge', 'Disclaimer writing (financial, health, legal)', 'Claim substantiation'] },
+        ]
+      },
+      {
+        id: 'graphic-designer',
+        name: 'Graphic Designer (Static)',
+        skills: [
+          { id: 'visual-fundamentals', name: 'Visual Design Fundamentals', subs: ['Color theory (contrast, harmony, palette)', 'Typography (hierarchy, pairing, kerning, leading)', 'Layout & composition (rule of thirds, whitespace, flow)', 'Grid systems & responsive design'] },
+          { id: 'brand-assets', name: 'Brand Asset Creation', subs: ['Logo design & variations', 'Brand collateral (decks, cards, letterheads)', 'Social media templates (platform-specific sizing)', 'Infographic design'] },
+          { id: 'ad-creative-production', name: 'Ad Creative Production', subs: ['Static ad design (multiple sizes/ratios)', 'Banner ads (display network specs)', 'Carousel design (narrative flow across slides)'] },
+          { id: 'design-tools', name: 'Tool Proficiency', subs: ['Adobe Photoshop (raster, compositing)', 'Adobe Illustrator (vector, icon design)', 'Figma (collaborative design, component systems)', 'Canva (rapid prototyping, team templates)'] },
+        ]
+      },
+      {
+        id: 'motion-designer',
+        name: 'Motion Designer / Video Editor',
+        skills: [
+          { id: 'video-editing-core', name: 'Video Editing Core', subs: ['Timeline editing (pacing, rhythm, beat matching)', 'Cutting techniques (J-cut, L-cut, jump cut, match cut)', 'Multi-cam editing', 'Audio syncing & layering'] },
+          { id: 'color-grading', name: 'Color Grading & Correction', subs: ['Primary correction (exposure, white balance)', 'Secondary correction (skin tones, sky replacement)', 'LUT application & creation', 'Color continuity across scenes'] },
+          { id: 'motion-graphics', name: 'Motion Graphics & Animation', subs: ['Kinetic typography', 'Lower thirds, title cards, end screens', 'Logo reveals & brand animations', 'Animated infographics & data viz'] },
+          { id: 'audio-post', name: 'Audio Post-Production', subs: ['Dialogue cleanup & noise reduction', 'Music selection & licensing', 'Sound design (foley, SFX layering)', 'Audio mixing & mastering (-14 LUFS)'] },
+          { id: 'platform-output', name: 'Platform-Specific Output', subs: ['Vertical 9:16 (Reels / TikTok / Shorts)', 'Square 1:1 (feed)', 'Horizontal 16:9 (YouTube / web)', 'Subtitling & captions (SRT, burned-in)', 'Thumbnail creation'] },
+          { id: 'video-tools', name: 'Tool Proficiency', subs: ['Premiere Pro / DaVinci Resolve', 'After Effects (motion graphics)', 'CapCut (short-form rapid editing)', 'Frame.io (review & approval)'] },
+        ]
+      },
+      {
+        id: 'videographer',
+        name: 'Videographer / Video Producer',
+        skills: [
+          { id: 'pre-production', name: 'Pre-Production', subs: ['Scriptwriting & storyboarding', 'Shot list creation', 'Location scouting & permits', 'Talent casting & direction', 'Budget estimation & scheduling'] },
+          { id: 'production', name: 'Production / On-Set', subs: ['Camera operation (DSLR, mirrorless, cinema)', 'Lens selection (focal length for intent)', 'Lighting setups (3-point, natural, LED panels)', 'Audio capture (lav mics, boom, recorders)', 'Directing talent (pacing, delivery, eye line)'] },
+          { id: 'content-types-video', name: 'Content Types', subs: ['Testimonial / case study videos', 'Product demos & explainers', 'Brand films & sizzle reels', 'Social content (BTS, day-in-the-life)', 'Event coverage'] },
+        ]
+      },
+      {
+        id: 'photographer',
+        name: 'Photographer',
+        skills: [
+          { id: 'technical-photo', name: 'Technical Photography', subs: ['Exposure triangle (aperture, shutter, ISO)', 'Lens selection for intent', 'Lighting control (studio, natural, mixed)', 'Surface & material-aware shooting'] },
+          { id: 'photo-post', name: 'Post-Production', subs: ['Lightroom (batch processing, color grading)', 'Photoshop (retouching, compositing, clipping)', 'Background removal & cleanup', 'Color consistency across a shoot'] },
+          { id: 'photo-specializations', name: 'Specializations', subs: ['Product photography (flat lay, lifestyle, hero)', 'Headshots & team photos', 'Event photography', 'Food & beverage photography'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'performance-paid',
+    name: 'Performance & Paid Media',
+    color: '#f97316',
+    description: 'Google Ads, Meta Ads, TikTok, LinkedIn, programmatic, and display',
+    roles: [
+      {
+        id: 'paid-search',
+        name: 'Paid Search Specialist (Google/Bing)',
+        skills: [
+          { id: 'campaign-architecture', name: 'Campaign Architecture', subs: ['Account structure (campaigns > ad groups > keywords)', 'Keyword research (volume, intent, competition)', 'Match type strategy (broad, phrase, exact, negative)', 'Ad extensions (sitelinks, callouts, snippets, price)'] },
+          { id: 'bidding-budget', name: 'Bidding & Budget Management', subs: ['Manual vs automated bidding (tCPA, tROAS)', 'Portfolio bid strategies', 'Budget pacing & dayparting', 'Auction insights analysis'] },
+          { id: 'search-ad-copy', name: 'Ad Copy & Creative', subs: ['Responsive Search Ads (headline & description pinning)', 'Dynamic keyword insertion', 'Ad testing frameworks (iterative creative)'] },
+          { id: 'shopping-pmax', name: 'Shopping & PMax', subs: ['Product feed optimization (titles, descriptions, GTINs)', 'Performance Max campaign structure', 'Asset group strategy'] },
+          { id: 'search-measurement', name: 'Measurement', subs: ['Conversion tracking (Google Tag, enhanced conversions)', 'Search term analysis & negative keyword mining', 'Quality Score optimization (relevance, LP, CTR)'] },
+        ]
+      },
+      {
+        id: 'paid-social',
+        name: 'Paid Social Specialist (Meta/TikTok/LinkedIn)',
+        skills: [
+          { id: 'meta-ads', name: 'Meta Ads (Facebook + Instagram)', subs: ['Campaign objective selection (awareness > conversion)', 'Audience building (custom, lookalike, interest stacking)', 'Pixel & Conversions API setup', 'Ad format mastery (image, video, carousel, collection)', 'Creative fatigue detection & rotation', 'Advantage+ campaigns & automation'] },
+          { id: 'tiktok-ads', name: 'TikTok Ads', subs: ['Spark Ads (boosting organic)', 'TopView, in-feed, branded effects', 'TikTok-native creative style', 'TikTok Pixel & Events API'] },
+          { id: 'linkedin-ads', name: 'LinkedIn Ads', subs: ['Sponsored content, InMail, conversation ads', 'ABM targeting (company lists, job title layering)', 'Lead gen forms vs landing page trade-offs'] },
+          { id: 'cross-platform-paid', name: 'Cross-Platform Skills', subs: ['Attribution windows (1d click, 7d click, view-through)', 'Budget allocation (test > scale framework)', 'Creative briefing (data-driven feedback loops)', 'ROAS / CPA target setting & scaling rules'] },
+        ]
+      },
+      {
+        id: 'programmatic',
+        name: 'Programmatic / Display Specialist',
+        skills: [
+          { id: 'programmatic-buying', name: 'Programmatic Buying', subs: ['DSP management (DV360, Trade Desk, Amazon DSP)', 'Real-time bidding (RTB) mechanics', 'PMP deals & direct deals', 'Audience segment buying (1P, 2P, 3P data)'] },
+          { id: 'ad-ops', name: 'Ad Operations', subs: ['Ad server management (GAM, CM360)', 'Creative trafficking & QA', 'Viewability optimization (above-fold, ad sizing)', 'Brand safety & fraud prevention (IVT, blocklists)'] },
+          { id: 'retargeting', name: 'Retargeting & Sequential Messaging', subs: ['Frequency capping strategy', 'Sequential ad storytelling', 'Cross-device identity resolution'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'seo-organic',
+    name: 'SEO & Organic',
+    color: '#22c55e',
+    description: 'Technical SEO, on-page, link building, and AI search optimization',
+    roles: [
+      {
+        id: 'technical-seo',
+        name: 'Technical SEO Specialist',
+        skills: [
+          { id: 'crawl-index', name: 'Crawlability & Indexation', subs: ['Robots.txt configuration', 'XML sitemap management', 'Canonical tag strategy', 'Index / noindex decisions', 'Crawl budget optimization'] },
+          { id: 'site-performance', name: 'Site Performance', subs: ['Core Web Vitals (LCP, INP, CLS)', 'Page speed optimization (compression, lazy load, CDN)', 'Mobile-first indexing compliance'] },
+          { id: 'structured-data', name: 'Structured Data & Schema', subs: ['JSON-LD implementation (FAQ, Product, Article)', 'Rich snippet qualification', 'Knowledge panel optimization'] },
+          { id: 'site-architecture', name: 'Architecture & Infrastructure', subs: ['URL structure & hierarchy', 'Internal linking architecture', 'Hreflang for international SEO', 'SSR vs CSR implications', 'Migration planning (domain, CMS, HTTPS)'] },
+          { id: 'ai-search', name: 'AI Search Optimization', subs: ['AI Overview optimization (Google SGE)', 'Entity-based SEO', 'Vector search & semantic relevance'] },
+        ]
+      },
+      {
+        id: 'content-seo',
+        name: 'Content / On-Page SEO Specialist',
+        skills: [
+          { id: 'keyword-research', name: 'Keyword Research & Strategy', subs: ['Keyword clustering by intent', 'Long-tail keyword mining', 'Competitor keyword gap analysis', 'Volume vs difficulty prioritization'] },
+          { id: 'on-page-opt', name: 'On-Page Optimization', subs: ['Title tag & H1 optimization', 'Meta description writing for CTR', 'Header hierarchy (H2, H3, H4)', 'Image optimization (alt text, file names)', 'Internal linking within content'] },
+          { id: 'content-perf', name: 'Content Performance', subs: ['Content refresh & decay analysis', 'Cannibalization detection & resolution', 'Featured snippet targeting'] },
+          { id: 'seo-tools', name: 'Tools', subs: ['Ahrefs / SEMrush / Moz', 'Screaming Frog (technical audits)', 'Google Search Console', 'Surfer SEO / Clearscope'] },
+        ]
+      },
+      {
+        id: 'link-building',
+        name: 'Link Building / Off-Page SEO',
+        skills: [
+          { id: 'link-acquisition', name: 'Link Acquisition', subs: ['Digital PR for links (data-driven stories)', 'Guest posting (quality over quantity)', 'Broken link building', 'Resource page link building', 'HARO / journalist request responses'] },
+          { id: 'outreach', name: 'Relationship Building', subs: ['Publisher & editor outreach', 'Niche community engagement', 'Co-marketing & partnership link swaps'] },
+          { id: 'link-profile', name: 'Link Profile Management', subs: ['Backlink audit & toxic disavowal', 'Anchor text distribution analysis', 'Competitor backlink replication'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'email-lifecycle',
+    name: 'Email & Lifecycle',
+    color: '#a855f7',
+    description: 'Email marketing, automation flows, CRM, and lead nurturing',
+    roles: [
+      {
+        id: 'email-specialist',
+        name: 'Email Marketing Specialist',
+        skills: [
+          { id: 'email-campaigns', name: 'Email Campaign Execution', subs: ['Campaign types (promo, newsletter, transactional)', 'Segmentation (behavioral, demographic, RFM)', 'Personalization (dynamic content, conditional blocks)', 'Send time optimization'] },
+          { id: 'email-design-deliver', name: 'Email Design & Deliverability', subs: ['HTML/CSS for email (table layouts, dark mode)', 'Responsive email design', 'Inbox rendering testing (Litmus, Email on Acid)', 'Deliverability (SPF, DKIM, DMARC, warm-up)', 'List hygiene (bounces, sunset, re-engagement)'] },
+          { id: 'email-automation', name: 'Automation & Flows', subs: ['Welcome series design', 'Abandoned cart / browse abandonment', 'Win-back campaigns', 'Post-purchase nurture flows', 'Lead scoring integration'] },
+          { id: 'email-analytics', name: 'Analytics & Optimization', subs: ['Open rate, CTR, CTOR, conversion analysis', 'A/B testing (subjects, times, content, CTAs)', 'Revenue attribution per email', 'Unsubscribe & complaint monitoring'] },
+          { id: 'email-platforms', name: 'Platform Proficiency', subs: ['Klaviyo, Mailchimp, HubSpot, ActiveCampaign', 'Customer.io, Brevo, Plunk', 'SMS integration (Attentive, Postscript)'] },
+        ]
+      },
+      {
+        id: 'automation-crm',
+        name: 'Marketing Automation / CRM Specialist',
+        skills: [
+          { id: 'workflow-design', name: 'Workflow Design', subs: ['Multi-step flows (triggers, conditions, delays, branches)', 'Lead nurturing sequences across channels', 'Lifecycle stages (MQL > SQL > Opportunity > Customer)', 'Scoring models (lead scoring, engagement scoring)'] },
+          { id: 'crm-mgmt', name: 'CRM Management', subs: ['Data hygiene & deduplication', 'Custom field & property architecture', 'Pipeline stage design & management', 'Contact ownership & routing rules'] },
+          { id: 'integrations', name: 'Integration & Data', subs: ['CRM-to-marketing platform sync', 'Zapier / Make / native API integrations', 'Data enrichment (Clearbit, ZoomInfo, Apollo)'] },
+          { id: 'crm-reporting', name: 'Reporting', subs: ['Funnel conversion reporting', 'Attribution modeling (first, last, multi-touch)', 'Revenue attribution per campaign'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'social-media',
+    name: 'Social Media',
+    color: '#06b6d4',
+    description: 'Social strategy, content planning, community, and growth',
+    roles: [
+      {
+        id: 'social-manager',
+        name: 'Social Media Manager',
+        skills: [
+          { id: 'platform-strategy', name: 'Platform Strategy', subs: ['Platform selection per audience', 'Content format optimization per platform', 'Algorithm understanding (engagement signals)', 'Posting frequency & timing strategy'] },
+          { id: 'social-content', name: 'Content Planning & Production', subs: ['Social-first ideation (trends, cultural moments)', 'Content repurposing (long > short > micro)', 'UGC curation & reposting strategy', 'Social copywriting (hook > body > CTA per platform)'] },
+          { id: 'growth-engagement', name: 'Growth & Engagement', subs: ['Hashtag strategy (reach vs niche vs branded)', 'Collaboration & cross-promotion strategy', 'Viral mechanics (shareability, emotional triggers)'] },
+          { id: 'social-analytics', name: 'Analytics & Reporting', subs: ['Platform native analytics interpretation', 'Third-party tools (Sprout, Hootsuite, Later, Buffer)', 'Social listening & sentiment analysis', 'Competitor benchmarking'] },
+        ]
+      },
+      {
+        id: 'community-manager',
+        name: 'Community Manager',
+        skills: [
+          { id: 'community-building', name: 'Community Building', subs: ['Platform selection (Discord, Slack, Facebook Groups)', 'Member onboarding flows', 'Community guidelines & moderation', 'Ambassador / power-user programs'] },
+          { id: 'community-engagement', name: 'Engagement & Retention', subs: ['Daily engagement rituals (prompts, challenges, AMAs)', 'Crisis response & de-escalation', 'Sentiment monitoring & escalation', 'Member feedback loops to product'] },
+          { id: 'community-growth', name: 'Community-Led Growth', subs: ['Referral program management', 'Community content to marketing pipeline', 'Event hosting (virtual meetups, webinars, IRL)'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'influencer-partnerships',
+    name: 'Influencer & Partnerships',
+    color: '#ec4899',
+    description: 'Influencer marketing, PR, earned media, and brand partnerships',
+    roles: [
+      {
+        id: 'influencer-manager',
+        name: 'Influencer Marketing Manager',
+        skills: [
+          { id: 'influencer-discovery', name: 'Discovery & Vetting', subs: ['Creator research (niche, demographics, engagement)', 'Fake follower / bot detection', 'Brand safety audit (past content review)', 'Tools (CreatorIQ, Grin, Upfluence, Aspire)'] },
+          { id: 'influencer-campaign', name: 'Campaign Management', subs: ['Brief writing (deliverables, dos/don\'ts, talking points)', 'Contract negotiation (flat fee, performance, hybrid)', 'Content approval workflows', 'Whitelisting & paid amplification of creator content'] },
+          { id: 'influencer-performance', name: 'Performance & Attribution', subs: ['Tracking (UTM links, promo codes, affiliate)', 'EMV (earned media value) calculation', 'ROI analysis per creator', 'Long-term vs one-off assessment'] },
+          { id: 'influencer-legal', name: 'Compliance & Legal', subs: ['FTC disclosure (#ad, #sponsored)', 'Platform branded content tools', 'Usage rights (exclusivity, duration, channels)'] },
+        ]
+      },
+      {
+        id: 'pr-comms',
+        name: 'PR & Communications',
+        skills: [
+          { id: 'media-relations', name: 'Media Relations', subs: ['Press release writing', 'Media list building & maintenance', 'Journalist relationship management', 'Pitch crafting (exclusive, embargo, mass)'] },
+          { id: 'earned-media', name: 'Earned Media Strategy', subs: ['News hijacking / trend insertion', 'Thought leadership placement', 'Awards & speaking opportunity sourcing', 'Byline / contributed article ghostwriting'] },
+          { id: 'crisis-comms', name: 'Crisis Communications', subs: ['Crisis playbook development', 'Real-time response drafting', 'Stakeholder communication (internal & external)', 'Reputation monitoring'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'web-conversion',
+    name: 'Web & Conversion',
+    color: '#eab308',
+    description: 'Web development, CRO, A/B testing, UX/UI, and tracking',
+    roles: [
+      {
+        id: 'web-dev',
+        name: 'Web Developer (Marketing)',
+        skills: [
+          { id: 'frontend-dev', name: 'Frontend Development', subs: ['HTML / CSS / JavaScript (responsive, accessible)', 'CMS management (WordPress, Webflow, Framer, Shopify)', 'Landing page building & deployment', 'Page speed optimization'] },
+          { id: 'tracking-impl', name: 'Tracking & Analytics Implementation', subs: ['GTM (tag, trigger, variable architecture)', 'GA4 setup (events, conversions, custom dimensions)', 'Meta Pixel, LinkedIn Insight Tag, TikTok Pixel', 'Server-side tracking setup', 'Consent management (cookies, GDPR/CCPA)'] },
+          { id: 'third-party-int', name: 'Third-Party Integrations', subs: ['Form tools (Typeform, HubSpot, Jotform)', 'Chat / bot integration', 'CRM / email via webhooks or APIs'] },
+        ]
+      },
+      {
+        id: 'cro-specialist',
+        name: 'CRO Specialist',
+        skills: [
+          { id: 'user-research-cro', name: 'User Research', subs: ['Heatmap & session recordings (Hotjar, FullStory, Clarity)', 'User surveys & on-site polls', 'Funnel drop-off analysis', 'Form analytics (field-level abandonment)'] },
+          { id: 'experimentation', name: 'Experimentation', subs: ['A/B test design (hypothesis > variable > metric)', 'Multivariate testing', 'Statistical significance (p-values, sample size)', 'Prioritization frameworks (ICE, PIE, RICE)'] },
+          { id: 'lp-optimization', name: 'Landing Page Optimization', subs: ['Above-the-fold (headline, hero, CTA)', 'Social proof placement (testimonials, logos)', 'Form optimization (field reduction, multi-step)', 'Information hierarchy'] },
+          { id: 'conversion-copy', name: 'Copywriting for Conversion', subs: ['Headline testing', 'CTA button copy', 'Objection handling in page copy', 'Microcopy (errors, tooltips, placeholders)'] },
+          { id: 'cro-tools', name: 'Tools', subs: ['Optimizely, VWO, AB Tasty', 'Unbounce, Instapage (LP builders)'] },
+        ]
+      },
+      {
+        id: 'ux-ui',
+        name: 'UX/UI Designer (Marketing)',
+        skills: [
+          { id: 'ux-research', name: 'User Research', subs: ['User interviews & contextual inquiry', 'Usability testing (moderated & unmoderated)', 'Persona creation & journey mapping', 'Information architecture'] },
+          { id: 'design-execution', name: 'Design Execution', subs: ['Wireframing (lo-fi to hi-fi)', 'Prototyping (interactive clickable flows)', 'Design system maintenance (components, tokens)', 'Responsive design (mobile-first)'] },
+          { id: 'ux-tools', name: 'Tools', subs: ['Figma (design, prototyping, handoff)', 'Maze / UserTesting (usability)', 'Hotjar (behavior analytics)'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'analytics-data',
+    name: 'Analytics & Data',
+    color: '#14b8a6',
+    description: 'Marketing analytics, attribution, data engineering, and BI',
+    roles: [
+      {
+        id: 'marketing-analyst',
+        name: 'Marketing Analyst',
+        skills: [
+          { id: 'web-campaign-analytics', name: 'Web & Campaign Analytics', subs: ['GA4 (events, explorations, audiences, attribution)', 'UTM taxonomy design & governance', 'Cross-channel performance dashboarding', 'Campaign post-mortem analysis'] },
+          { id: 'attribution', name: 'Attribution & Measurement', subs: ['Multi-touch models (linear, time-decay, position, data-driven)', 'Marketing mix modeling (MMM)', 'Incrementality testing (lift studies, holdouts)', 'Media efficiency analysis'] },
+          { id: 'data-manipulation', name: 'Data Manipulation & Visualization', subs: ['SQL (querying, joins, aggregations)', 'Excel / Sheets (pivots, VLOOKUP, advanced formulas)', 'BI tools (Looker, Tableau, Power BI, Metabase)', 'Python / R (pandas, matplotlib, stats tests)'] },
+          { id: 'data-storytelling', name: 'Reporting & Communication', subs: ['Executive dashboard design', 'WoW / MoM / YoY trend reporting', 'Data storytelling (insight > recommendation > action)', 'Anomaly detection & alerts'] },
+        ]
+      },
+      {
+        id: 'data-engineer',
+        name: 'Marketing Data Engineer',
+        skills: [
+          { id: 'data-infra', name: 'Data Infrastructure', subs: ['CDP setup (Segment, mParticle, RudderStack)', 'Data warehouse integration (BigQuery, Snowflake, Redshift)', 'ETL pipeline building', 'Event tracking taxonomy design'] },
+          { id: 'privacy-compliance', name: 'Privacy & Compliance', subs: ['First-party data strategy (cookieless future)', 'Consent management platform integration', 'Data retention policies', 'GDPR / CCPA technical compliance'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'events-experiential',
+    name: 'Events & Experiential',
+    color: '#64748b',
+    description: 'Event marketing, webinars, trade shows, and experiential',
+    roles: [
+      {
+        id: 'event-manager',
+        name: 'Event Marketing Manager',
+        skills: [
+          { id: 'event-strategy', name: 'Event Strategy', subs: ['Event type selection (webinars, conferences, roundtables)', 'Event-to-pipeline attribution', 'Pre / during / post event content strategy'] },
+          { id: 'event-execution', name: 'Execution', subs: ['Vendor & venue management', 'Registration & attendee tools (Splash, Eventbrite, Hopin)', 'Speaker sourcing & management', 'Sponsorship negotiation'] },
+          { id: 'digital-events', name: 'Digital Events', subs: ['Webinar production (Zoom, Livestorm, Goldcast)', 'Virtual event platform management', 'On-demand content from recordings'] },
+        ]
+      }
+    ]
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────
+let state = {
+  view: 'overview', // 'overview' | 'pod' | 'role'
+  activePod: null,
+  activeRole: null,
+  expandedSkills: {},
+  gifs: JSON.parse(localStorage.getItem('skillGraphGifs') || '{}'),
+  search: '',
+};
+
+function setState(updates) {
+  Object.assign(state, updates);
+  render();
+}
+
+function saveGif(skillId, dataUrl) {
+  state.gifs[skillId] = dataUrl;
+  localStorage.setItem('skillGraphGifs', JSON.stringify(state.gifs));
+  render();
+}
+
+function removeGif(skillId) {
+  delete state.gifs[skillId];
+  localStorage.setItem('skillGraphGifs', JSON.stringify(state.gifs));
+  render();
+}
+
+function toggleSkill(skillId) {
+  state.expandedSkills[skillId] = !state.expandedSkills[skillId];
+  render();
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────
+function getStats() {
+  let roles = 0, skills = 0, subs = 0;
+  SKILL_GRAPH.forEach(pod => {
+    pod.roles.forEach(role => {
+      roles++;
+      role.skills.forEach(skill => {
+        skills++;
+        subs += skill.subs.length;
+      });
+    });
+  });
+  return { pods: SKILL_GRAPH.length, roles, skills, subs };
+}
+
+function getPodStats(pod) {
+  let skills = 0, subs = 0;
+  pod.roles.forEach(r => { r.skills.forEach(s => { skills++; subs += s.subs.length; }); });
+  return { roles: pod.roles.length, skills, subs };
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────
+function getSearchResults(query) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results = [];
+  SKILL_GRAPH.forEach(pod => {
+    pod.roles.forEach(role => {
+      role.skills.forEach(skill => {
+        const nameMatch = skill.name.toLowerCase().includes(q);
+        const subMatches = skill.subs.filter(s => s.toLowerCase().includes(q));
+        if (nameMatch || subMatches.length > 0) {
+          results.push({ pod, role, skill, subMatches, nameMatch });
+        }
+      });
+      if (role.name.toLowerCase().includes(q)) {
+        results.push({ pod, role, skill: null, subMatches: [], nameMatch: true });
+      }
+    });
+    if (pod.name.toLowerCase().includes(q)) {
+      results.push({ pod, role: null, skill: null, subMatches: [], nameMatch: true });
+    }
+  });
+  return results.slice(0, 20);
+}
+
+// ─── GIF HANDLER ──────────────────────────────────────────────────────
+function handleGifUpload(skillId, file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => saveGif(skillId, e.target.result);
+  reader.readAsDataURL(file);
+}
+
+function setupGifZone(el, skillId) {
+  if (!el || el._gifSetup) return;
+  el._gifSetup = true;
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/gif,image/*';
+  input.style.display = 'none';
+  el.appendChild(input);
+
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('.gif-remove')) return;
+    input.click();
+  });
+  input.addEventListener('change', () => { if (input.files[0]) handleGifUpload(skillId, input.files[0]); });
+  el.addEventListener('dragover', (e) => { e.preventDefault(); el.classList.add('dragover'); });
+  el.addEventListener('dragleave', () => el.classList.remove('dragover'));
+  el.addEventListener('drop', (e) => { e.preventDefault(); el.classList.remove('dragover'); if (e.dataTransfer.files[0]) handleGifUpload(skillId, e.dataTransfer.files[0]); });
+}
+
+// ─── RENDER FUNCTIONS ─────────────────────────────────────────────────
+
+function renderHeader() {
+  const stats = getStats();
+  const breadcrumbs = buildBreadcrumbs();
+  return `
+    <header class="border-b border-white/[0.06] bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50">
+      <div class="max-w-[1400px] mx-auto px-6 py-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, #6366f1, #f43f5e)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-7.07-15.07 2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
+            </div>
+            <div>
+              <h1 class="text-lg font-bold text-white tracking-tight">Marketing Skill Graph</h1>
+              <p class="text-[11px] text-slate-500 tracking-wide uppercase">AI Agent Capability Map</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="hidden sm:flex items-center gap-4 text-xs text-slate-500">
+              <span><span class="stat-number text-white font-semibold">${stats.pods}</span> pods</span>
+              <span class="text-slate-700">|</span>
+              <span><span class="stat-number text-white font-semibold">${stats.roles}</span> roles</span>
+              <span class="text-slate-700">|</span>
+              <span><span class="stat-number text-white font-semibold">${stats.skills}</span> skills</span>
+              <span class="text-slate-700">|</span>
+              <span><span class="stat-number text-white font-semibold">${stats.subs}</span> atomic competencies</span>
+            </div>
+            <input
+              type="text"
+              placeholder="Search skills..."
+              class="search-input w-48 px-3 py-1.5 rounded-md text-sm text-slate-300 placeholder:text-slate-600"
+              value="${state.search}"
+              oninput="setState({ search: this.value, view: this.value.length >= 2 ? 'search' : (state.activePod ? (state.activeRole ? 'role' : 'pod') : 'overview') })"
+            />
+          </div>
+        </div>
+        ${breadcrumbs ? `<div class="flex items-center text-xs">${breadcrumbs}</div>` : ''}
+      </div>
+    </header>
+  `;
+}
+
+function buildBreadcrumbs() {
+  const parts = [];
+  parts.push(`<span class="breadcrumb-item ${state.view === 'overview' ? 'text-white font-medium' : ''}" onclick="setState({ view: 'overview', activePod: null, activeRole: null, search: '' })">All Pods</span>`);
+  if (state.activePod) {
+    const pod = SKILL_GRAPH.find(p => p.id === state.activePod);
+    if (pod) {
+      parts.push(`<span class="breadcrumb-sep">/</span>`);
+      parts.push(`<span class="breadcrumb-item ${state.view === 'pod' ? 'font-medium' : ''}" style="${state.view === 'pod' ? 'color:'+pod.color : ''}" onclick="setState({ view: 'pod', activeRole: null, search: '' })">${pod.name}</span>`);
+    }
+    if (state.activeRole) {
+      const role = pod?.roles.find(r => r.id === state.activeRole);
+      if (role) {
+        parts.push(`<span class="breadcrumb-sep">/</span>`);
+        parts.push(`<span class="breadcrumb-item text-white font-medium">${role.name}</span>`);
+      }
+    }
+  }
+  if (state.search) {
+    parts.push(`<span class="breadcrumb-sep">/</span>`);
+    parts.push(`<span class="text-slate-400">Search: "${state.search}"</span>`);
+  }
+  return parts.length > 1 ? parts.join('') : '';
+}
+
+function renderOverview() {
+  return `
+    <div class="view-fade-in max-w-[1400px] mx-auto px-6 py-8">
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-white mb-1">Skill Pods</h2>
+        <p class="text-sm text-slate-500">10 functional verticals. Click to drill down into roles, skills, and atomic competencies.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        ${SKILL_GRAPH.map(pod => {
+          const s = getPodStats(pod);
+          return `
+            <div class="pod-card rounded-xl p-5 bg-white/[0.02] cursor-pointer" onclick="setState({ view: 'pod', activePod: '${pod.id}' })">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-3 h-3 rounded-full" style="background: ${pod.color}"></div>
+                <div class="flex items-center gap-1.5">
+                  <span class="count-badge text-white/60" style="background: ${pod.color}22; color: ${pod.color}">${s.roles} roles</span>
+                </div>
+              </div>
+              <h3 class="text-[15px] font-semibold text-white mb-1">${pod.name}</h3>
+              <p class="text-xs text-slate-500 leading-relaxed mb-4">${pod.description}</p>
+              <div class="flex items-center gap-3 text-[11px] text-slate-600">
+                <span>${s.skills} skills</span>
+                <span>${s.subs} competencies</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderPod() {
+  const pod = SKILL_GRAPH.find(p => p.id === state.activePod);
+  if (!pod) return '';
+  return `
+    <div class="view-fade-in max-w-[1400px] mx-auto px-6 py-8">
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-3 h-3 rounded-full" style="background: ${pod.color}"></div>
+          <h2 class="text-2xl font-bold text-white">${pod.name}</h2>
+        </div>
+        <p class="text-sm text-slate-500">${pod.description}</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        ${pod.roles.map(role => {
+          const skillCount = role.skills.length;
+          const subCount = role.skills.reduce((a, s) => a + s.subs.length, 0);
+          const gifCount = role.skills.filter(s => state.gifs[s.id]).length;
+          return `
+            <div class="pod-card rounded-xl p-5 bg-white/[0.02] cursor-pointer" onclick="setState({ view: 'role', activeRole: '${role.id}' })">
+              <div class="flex items-start justify-between mb-3">
+                <h3 class="text-[15px] font-semibold text-white leading-snug pr-2">${role.name}</h3>
+                ${gifCount > 0 ? `<span class="count-badge shrink-0" style="background: ${pod.color}22; color: ${pod.color}">${gifCount} GIF${gifCount > 1 ? 's' : ''}</span>` : ''}
+              </div>
+              <div class="space-y-1.5 mb-4">
+                ${role.skills.map(skill => `
+                  <div class="flex items-center gap-2 text-xs">
+                    <div class="w-1.5 h-1.5 rounded-full shrink-0" style="background: ${pod.color}66"></div>
+                    <span class="text-slate-400 truncate">${skill.name}</span>
+                    <span class="text-slate-600 shrink-0">${skill.subs.length}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="flex items-center gap-3 text-[11px] text-slate-600 pt-3 border-t border-white/[0.04]">
+                <span>${skillCount} skills</span>
+                <span>${subCount} competencies</span>
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderRole() {
+  const pod = SKILL_GRAPH.find(p => p.id === state.activePod);
+  const role = pod?.roles.find(r => r.id === state.activeRole);
+  if (!pod || !role) return '';
+
+  return `
+    <div class="view-fade-in max-w-[1000px] mx-auto px-6 py-8">
+      <div class="mb-8">
+        <div class="flex items-center gap-3 mb-1">
+          <div class="w-3 h-3 rounded-full" style="background: ${pod.color}"></div>
+          <h2 class="text-xl font-bold text-white">${role.name}</h2>
+        </div>
+        <p class="text-sm text-slate-500">${pod.name} &mdash; ${role.skills.length} skills, ${role.skills.reduce((a,s) => a + s.subs.length, 0)} atomic competencies</p>
+      </div>
+      <div class="space-y-3">
+        ${role.skills.map(skill => renderSkillNode(skill, pod.color)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderSkillNode(skill, color) {
+  const isOpen = state.expandedSkills[skill.id];
+  const hasGif = state.gifs[skill.id];
+
+  return `
+    <div class="skill-node rounded-xl border border-white/[0.06] bg-white/[0.015] overflow-hidden">
+      <div class="flex items-center gap-3 p-4 cursor-pointer select-none" onclick="toggleSkill('${skill.id}')">
+        <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0" style="background: ${color}15">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="transform: rotate(${isOpen ? '90' : '0'}deg); transition: transform 0.15s">
+            <path d="M4.5 2.5L8 6L4.5 9.5" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <span class="text-sm font-medium text-white">${skill.name}</span>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          ${hasGif ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-medium">GIF</span>' : ''}
+          <span class="text-[11px] text-slate-600">${skill.subs.length} competencies</span>
+        </div>
+      </div>
+      <div class="expand-content ${isOpen ? 'open' : ''}">
+        <div class="px-4 pb-4">
+          <div class="flex gap-4">
+            <div class="flex-1">
+              <div class="flex flex-wrap gap-1.5">
+                ${skill.subs.map(sub => `<span class="sub-skill-tag">${sub}</span>`).join('')}
+              </div>
+            </div>
+            <div class="w-32 shrink-0">
+              <div class="gif-zone w-full h-24 flex items-center justify-center" id="gif-${skill.id}">
+                ${hasGif
+                  ? `<img src="${state.gifs[skill.id]}" alt="${skill.name}"/><button class="gif-remove absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center hover:bg-red-500/80" onclick="event.stopPropagation(); removeGif('${skill.id}')">&times;</button>`
+                  : `<div class="text-center"><div class="text-slate-600 text-[10px] mb-0.5">Drop .gif</div><div class="text-slate-700 text-[9px]">or click</div></div>`
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSearch() {
+  const results = getSearchResults(state.search);
+  return `
+    <div class="view-fade-in max-w-[1000px] mx-auto px-6 py-8">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-white mb-1">${results.length} result${results.length !== 1 ? 's' : ''} for "${state.search}"</h2>
+      </div>
+      <div class="space-y-2">
+        ${results.length === 0 ? '<p class="text-slate-500 text-sm">No matching skills found.</p>' : ''}
+        ${results.map(r => {
+          if (!r.skill && !r.role) {
+            return `
+              <div class="pod-card rounded-lg p-4 bg-white/[0.02] cursor-pointer" onclick="setState({ view: 'pod', activePod: '${r.pod.id}', search: '' })">
+                <div class="flex items-center gap-2">
+                  <div class="w-2.5 h-2.5 rounded-full" style="background: ${r.pod.color}"></div>
+                  <span class="text-sm font-medium text-white">${r.pod.name}</span>
+                  <span class="text-[11px] text-slate-600">pod</span>
+                </div>
+              </div>
+            `;
+          }
+          if (!r.skill) {
+            return `
+              <div class="pod-card rounded-lg p-4 bg-white/[0.02] cursor-pointer" onclick="setState({ view: 'role', activePod: '${r.pod.id}', activeRole: '${r.role.id}', search: '' })">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-2.5 h-2.5 rounded-full" style="background: ${r.pod.color}"></div>
+                  <span class="text-sm font-medium text-white">${r.role.name}</span>
+                  <span class="text-[11px] text-slate-600">role</span>
+                </div>
+                <div class="text-[11px] text-slate-600">${r.pod.name}</div>
+              </div>
+            `;
+          }
+          return `
+            <div class="pod-card rounded-lg p-4 bg-white/[0.02] cursor-pointer" onclick="setState({ view: 'role', activePod: '${r.pod.id}', activeRole: '${r.role.id}', search: '' }); setTimeout(() => { setState({ expandedSkills: { ...state.expandedSkills, '${r.skill.id}': true } }); }, 50)">
+              <div class="flex items-center gap-2 mb-1">
+                <div class="w-2.5 h-2.5 rounded-full" style="background: ${r.pod.color}"></div>
+                <span class="text-sm font-medium text-white">${r.skill.name}</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mb-2">${r.pod.name} &rarr; ${r.role.name}</div>
+              ${r.subMatches.length > 0 ? `<div class="flex flex-wrap gap-1">${r.subMatches.map(s => `<span class="sub-skill-tag">${s}</span>`).join('')}</div>` : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────────
+function render() {
+  let content = '';
+  if (state.search && state.search.length >= 2) {
+    content = renderSearch();
+  } else {
+    switch (state.view) {
+      case 'overview': content = renderOverview(); break;
+      case 'pod': content = renderPod(); break;
+      case 'role': content = renderRole(); break;
+      default: content = renderOverview();
+    }
+  }
+
+  document.getElementById('app').innerHTML = renderHeader() + `<main>${content}</main>`;
+
+  // Setup gif upload zones after render
+  requestAnimationFrame(() => {
+    document.querySelectorAll('.gif-zone').forEach(el => {
+      const skillId = el.id.replace('gif-', '');
+      setupGifZone(el, skillId);
+    });
+  });
+}
+
+// ─── KEYBOARD NAV ─────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (state.search) { setState({ search: '' }); return; }
+    if (state.view === 'role') { setState({ view: 'pod', activeRole: null }); return; }
+    if (state.view === 'pod') { setState({ view: 'overview', activePod: null }); return; }
+  }
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault();
+    document.querySelector('.search-input')?.focus();
+  }
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+render();
+</script>
+
+</body>
+</html>
