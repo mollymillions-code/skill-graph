@@ -743,147 +743,252 @@ function initGraph(filterPodId) {
   }
   resize();
 
-  // ── Build nodes — solar system layout ──
-  // World origin (0,0) = center of the system
+  // ── Data ──
   const pods = filterPodId ? SKILL_GRAPH.filter(p => p.id === filterPodId) : SKILL_GRAPH;
   const nodes = [], edges = [];
   const podCount = pods.length;
 
-  // Layout radii — everything fits at zoom 1
-  const viewR = Math.min(W, H) * 0.5;
-  const podR = filterPodId ? 0 : viewR * 0.7;
-  const roleR = filterPodId ? viewR * 0.55 : 50;
+  // Seeded RNG for organic but deterministic spacing
+  let _seed = 42;
+  function rng() { _seed = (_seed * 16807) % 2147483647; return (_seed - 1) / 2147483646; }
+
+  // ── Center hub ──
+  const hubNode = !filterPodId ? { id: '_hub', label: 'THE GIGA MARKETING TEAM', type: 'hub',
+    color: '#a78bfa', r: 55, x: 0, y: 0, baseX: 0, baseY: 0, phase: 0 } : null;
+  if (hubNode) nodes.push(hubNode);
+
+  // ── Expansive layout — spread everything out ──
+  const podOrbit = filterPodId ? 0 : 1100;
+  const roleOrbit = filterPodId ? 450 : 340;
+  const skillOrbit = 170;
 
   pods.forEach((pod, pi) => {
     const a = (pi / podCount) * Math.PI * 2 - Math.PI / 2;
-    const px = Math.cos(a) * podR;
-    const py = Math.sin(a) * podR;
+    const rv = podOrbit * (0.88 + rng() * 0.24);
+    const px = filterPodId ? 0 : Math.cos(a) * rv;
+    const py = filterPodId ? 0 : Math.sin(a) * rv;
     const pn = { id: pod.id, label: pod.name, type: 'pod', color: pod.color,
-                 r: filterPodId ? 32 : 20, x: px, y: py, baseX: px, baseY: py,
-                 desc: pod.description, phase: pi * 0.4, podData: pod };
+      r: 30, x: px, y: py, baseX: px, baseY: py,
+      desc: pod.description, phase: pi * 0.4, podData: pod, angle: a };
     nodes.push(pn);
+    if (hubNode) edges.push({ source: hubNode, target: pn, level: 0 });
 
     const rc = pod.roles.length;
     pod.roles.forEach((role, ri) => {
-      const spread = Math.min(Math.PI * 0.65, rc * 0.28);
+      const spread = Math.min(Math.PI * 0.85, rc * 0.38);
       const ra = a - spread / 2 + (rc > 1 ? (ri / (rc - 1)) * spread : 0);
-      const rx = px + Math.cos(ra) * roleR;
-      const ry = py + Math.sin(ra) * roleR;
+      const rrv = roleOrbit * (0.82 + rng() * 0.36);
+      const rx = px + Math.cos(ra) * rrv;
+      const ry = py + Math.sin(ra) * rrv;
       const rn = { id: role.id, label: role.name, type: 'role', color: pod.color,
-                   r: filterPodId ? 8 : 4.5, x: rx, y: ry, baseX: rx, baseY: ry,
-                   parentPod: pod.id, phase: ri * 0.7 + pi, roleData: role };
+        r: 14, x: rx, y: ry, baseX: rx, baseY: ry,
+        parentPod: pod.id, phase: ri * 0.7 + pi, roleData: role };
       nodes.push(rn);
-      edges.push({ source: pn, target: rn });
+      edges.push({ source: pn, target: rn, level: 1 });
+
+      const sc = role.skills.length;
+      role.skills.forEach((skill, si) => {
+        const sspread = Math.min(Math.PI * 0.75, sc * 0.32);
+        const sa = ra - sspread / 2 + (sc > 1 ? (si / (sc - 1)) * sspread : 0);
+        const srv = skillOrbit * (0.8 + rng() * 0.4);
+        const sx = rx + Math.cos(sa) * srv;
+        const sy = ry + Math.sin(sa) * srv;
+        const sn = { id: skill.id, label: skill.name, type: 'skill', color: pod.color,
+          r: 6, x: sx, y: sy, baseX: sx, baseY: sy,
+          subs: skill.subs, parentRole: role.id, parentPod: pod.id,
+          phase: si * 0.5 + ri + pi };
+        nodes.push(sn);
+        edges.push({ source: rn, target: sn, level: 2 });
+      });
     });
   });
 
-  // ── Camera ──
-  let camX = 0, camY = 0, zoom = 1;
+  // ── Camera — zoomed out to see the whole map ──
+  let camX = 0, camY = 0, zoom = filterPodId ? 0.45 : 0.18;
   let dragging = false, dragNode = null, lastMouse = null;
   let hoveredNode = null;
-  let animFrame = null, running = true;
-  let time = 0;
+  let animFrame = null, running = true, time = 0;
 
   function worldToScreen(wx, wy) { return [(wx - camX) * zoom + W / 2, (wy - camY) * zoom + H / 2]; }
   function screenToWorld(sx, sy) { return [(sx - W / 2) / zoom + camX, (sy - H / 2) / zoom + camY]; }
 
-  // ── Draw loop ──
+  // ── Draw ──
   function draw() {
     time += 0.016;
     ctx.fillStyle = '#080b12';
     ctx.fillRect(0, 0, W, H);
+
+    // Gentle floating
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.x = n.baseX + Math.sin(time * 0.3 + n.phase * 1.3) * 2;
+      n.y = n.baseY + Math.sin(time * 0.5 + n.phase) * 2.5;
+    });
+
+    // ── World-space rendering ──
     ctx.save();
     ctx.translate(W / 2, H / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-camX, -camY);
 
-    // Subtle orbital ring
-    if (!filterPodId && podR > 0) {
-      ctx.beginPath();
-      ctx.arc(0, 0, podR, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.035)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-    }
-
-    // Gentle floating
-    nodes.forEach(n => {
-      if (n === dragNode) return;
-      n.x = n.baseX + Math.sin(time * 0.3 + n.phase * 1.3) * 1.5;
-      n.y = n.baseY + Math.sin(time * 0.5 + n.phase) * 2;
-    });
-
     // Edges
     edges.forEach(e => {
-      const isHovered = hoveredNode && (e.source === hoveredNode || e.target === hoveredNode ||
-        (hoveredNode.type === 'pod' && e.source === hoveredNode));
+      const isH = hoveredNode && (e.source === hoveredNode || e.target === hoveredNode);
       ctx.beginPath();
       ctx.moveTo(e.source.x, e.source.y);
       ctx.lineTo(e.target.x, e.target.y);
-      ctx.strokeStyle = isHovered ? e.source.color + '50' : e.source.color + '15';
-      ctx.lineWidth = isHovered ? 1.2 : 0.6;
+      if (e.level === 0) {
+        ctx.strokeStyle = isH ? '#ffffff30' : '#ffffff08';
+        ctx.lineWidth = isH ? 2.5 : 1.2;
+      } else if (e.level === 1) {
+        ctx.strokeStyle = isH ? e.source.color + '55' : e.source.color + '1a';
+        ctx.lineWidth = isH ? 1.5 : 0.8;
+      } else {
+        ctx.strokeStyle = isH ? e.source.color + '44' : e.source.color + '0e';
+        ctx.lineWidth = isH ? 1 : 0.5;
+      }
       ctx.stroke();
+    });
+
+    // Skill nodes
+    nodes.filter(n => n.type === 'skill').forEach(n => {
+      const isH = hoveredNode === n;
+      const isParentH = hoveredNode && hoveredNode.type === 'role' && hoveredNode.id === n.parentRole;
+      const r = n.r * (isH ? 2 : isParentH ? 1.4 : 1);
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = n.color + (isH ? 'cc' : isParentH ? '88' : '35');
+      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 10; }
+      ctx.fill();
+      ctx.shadowBlur = 0;
     });
 
     // Role nodes
     nodes.filter(n => n.type === 'role').forEach(n => {
       const isH = hoveredNode === n;
       const isParentH = hoveredNode && hoveredNode.type === 'pod' && hoveredNode.id === n.parentPod;
-      const highlight = isH || isParentH;
-      const r = n.r * (isH ? 2 : isParentH ? 1.4 : 1);
-
+      const r = n.r * (isH ? 1.4 : isParentH ? 1.2 : 1);
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = n.color + (isH ? 'dd' : isParentH ? '99' : '44');
-      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 10; }
+      ctx.fillStyle = n.color + (isH ? 'dd' : isParentH ? '99' : '55');
+      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 16; }
       ctx.fill();
       ctx.shadowBlur = 0;
-
-      // Labels: show when hovered, parent hovered, or zoomed in
-      if (highlight || zoom > 1.8) {
-        ctx.font = `${isH ? 600 : 400} ${isH ? 10 : 8}px Inter, sans-serif`;
-        ctx.fillStyle = isH ? '#fff' : isParentH ? '#b0bec5' : '#475569';
-        ctx.textAlign = 'center';
-        const lbl = n.label.length > 26 ? n.label.slice(0, 24) + '..' : n.label;
-        ctx.fillText(lbl, n.x, n.y + r + 10);
-      }
     });
 
     // Pod nodes
     nodes.filter(n => n.type === 'pod').forEach(n => {
       const isH = hoveredNode === n;
       const r = n.r * (isH ? 1.15 : 1);
-
-      // Single glow ring
       ctx.beginPath();
-      ctx.arc(n.x, n.y, r + 5, 0, Math.PI * 2);
-      ctx.strokeStyle = n.color + (isH ? '28' : '10');
-      ctx.lineWidth = 1;
+      ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2);
+      ctx.strokeStyle = n.color + (isH ? '30' : '14');
+      ctx.lineWidth = 1.5;
       ctx.stroke();
-
-      // Main circle with gradient
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      const grad = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
-      grad.addColorStop(0, '#ffffff28');
-      grad.addColorStop(0.5, n.color);
-      grad.addColorStop(1, n.color + 'bb');
-      ctx.fillStyle = grad;
+      const g = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
+      g.addColorStop(0, '#ffffff25');
+      g.addColorStop(0.5, n.color);
+      g.addColorStop(1, n.color + 'bb');
+      ctx.fillStyle = g;
       ctx.shadowColor = n.color;
-      ctx.shadowBlur = isH ? 25 : 12;
+      ctx.shadowBlur = isH ? 30 : 14;
       ctx.fill();
       ctx.shadowBlur = 0;
-
-      // Label — always visible
-      ctx.font = '600 12px Inter, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillStyle = '#000000aa';
-      ctx.fillText(n.label, n.x + 0.5, n.y + r + 15 + 0.5);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(n.label, n.x, n.y + r + 15);
     });
 
+    // Hub node
+    if (hubNode) {
+      const r = hubNode.r;
+      for (let i = 4; i >= 1; i--) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r + i * 18, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(167,139,250,${0.02 + i * 0.015})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      const hg = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0, 0, 0, r);
+      hg.addColorStop(0, '#ffffff');
+      hg.addColorStop(0.25, '#c4b5fd');
+      hg.addColorStop(0.55, '#7c3aed');
+      hg.addColorStop(1, '#4c1d95');
+      ctx.fillStyle = hg;
+      ctx.shadowColor = '#7c3aed';
+      ctx.shadowBlur = 50;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
     ctx.restore();
+
+    // ── Screen-space labels (always readable, not scaled by zoom) ──
+
+    // Hub label
+    if (hubNode) {
+      const [hx, hy] = worldToScreen(hubNode.x, hubNode.y);
+      const sr = hubNode.r * zoom;
+      ctx.textAlign = 'center';
+      if (sr > 8) {
+        ctx.font = '900 15px Inter, sans-serif';
+        ctx.fillStyle = '#ffffffdd';
+        ctx.fillText('THE GIGA', hx, hy - 3);
+        ctx.fillText('MARKETING TEAM', hx, hy + 14);
+      } else {
+        ctx.font = '800 11px Inter, sans-serif';
+        ctx.fillStyle = '#ffffffbb';
+        ctx.fillText('GIGA MARKETING', hx, hy + 4);
+      }
+    }
+
+    // Pod labels — always visible
+    nodes.filter(n => n.type === 'pod').forEach(n => {
+      const [sx, sy] = worldToScreen(n.x, n.y);
+      if (sx < -150 || sx > W + 150 || sy < -50 || sy > H + 50) return;
+      const sr = n.r * zoom;
+      const isH = hoveredNode === n;
+      ctx.textAlign = 'center';
+      ctx.font = `${isH ? 800 : 700} 13px Inter, sans-serif`;
+      ctx.fillStyle = '#000000aa';
+      ctx.fillText(n.label, sx + 0.5, sy + sr + 16 + 0.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(n.label, sx, sy + sr + 16);
+    });
+
+    // Role labels — visible when zoomed past 0.22
+    if (zoom > 0.22) {
+      nodes.filter(n => n.type === 'role').forEach(n => {
+        const [sx, sy] = worldToScreen(n.x, n.y);
+        if (sx < -120 || sx > W + 120 || sy < -40 || sy > H + 40) return;
+        const sr = n.r * zoom;
+        const isH = hoveredNode === n;
+        const isParentH = hoveredNode && hoveredNode.type === 'pod' && hoveredNode.id === n.parentPod;
+        ctx.textAlign = 'center';
+        ctx.font = `${isH ? 600 : 500} ${isH ? 11 : 10}px Inter, sans-serif`;
+        ctx.fillStyle = isH ? '#ffffff' : isParentH ? '#cbd5e1' : '#8892a4';
+        const lbl = n.label.length > 30 ? n.label.slice(0, 28) + '..' : n.label;
+        ctx.fillText(lbl, sx, sy + sr + 13);
+      });
+    }
+
+    // Skill labels — visible when zoomed past 0.45
+    if (zoom > 0.45) {
+      nodes.filter(n => n.type === 'skill').forEach(n => {
+        const [sx, sy] = worldToScreen(n.x, n.y);
+        if (sx < -100 || sx > W + 100 || sy < -30 || sy > H + 30) return;
+        const sr = n.r * zoom;
+        const isH = hoveredNode === n;
+        const isParentH = hoveredNode && hoveredNode.type === 'role' && hoveredNode.id === n.parentRole;
+        ctx.textAlign = 'center';
+        ctx.font = `${isH ? 600 : 400} ${isH ? 10 : 9}px Inter, sans-serif`;
+        ctx.fillStyle = isH ? '#e2e8f0' : isParentH ? '#94a3b8' : '#556270';
+        const lbl = n.label.length > 26 ? n.label.slice(0, 24) + '..' : n.label;
+        ctx.fillText(lbl, sx, sy + sr + 10);
+      });
+    }
+
     if (running) animFrame = requestAnimationFrame(draw);
   }
 
@@ -892,7 +997,31 @@ function initGraph(filterPodId) {
 
   function showHoverPanel(node, mx, my) {
     let html = '';
-    if (node.type === 'pod') {
+    if (node.type === 'hub') {
+      const stats = getStats();
+      html = `<div style="border-bottom:2px solid #7c3aed; padding-bottom:8px; margin-bottom:10px;">
+        <div style="font-size:15px; font-weight:800; color:#fff;">THE GIGA MARKETING TEAM</div>
+        <div style="font-size:11px; color:#a78bfa; margin-top:4px;">AI Agent Capability Map</div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.pods}</div>
+          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Pods</div>
+        </div>
+        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.roles}</div>
+          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Roles</div>
+        </div>
+        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.skills}</div>
+          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Skills</div>
+        </div>
+        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.subs}</div>
+          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Competencies</div>
+        </div>
+      </div>`;
+    } else if (node.type === 'pod') {
       const pod = node.podData;
       const totalSkills = pod.roles.reduce((a, r) => a + r.skills.length, 0);
       const totalSubs = pod.roles.reduce((a, r) => a + r.skills.reduce((b, s) => b + s.subs.length, 0), 0);
@@ -903,7 +1032,6 @@ function initGraph(filterPodId) {
         <div style="font-size:10px; color:#475569; margin-top:5px;">${pod.roles.length} roles · ${totalSkills} skills · ${totalSubs} competencies</div>
       </div>`;
       pod.roles.forEach(role => {
-        const sc = role.skills.length;
         html += `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
           <div style="font-size:11px; font-weight:600; color:#e2e8f0;">${role.name}</div>
           <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;">
@@ -917,7 +1045,7 @@ function initGraph(filterPodId) {
       html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
         <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">${pod ? pod.name : 'Role'}</div>
         <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
-        <div style="font-size:10px; color:#475569; margin-top:3px;">${role.skills.length} skills · ${role.skills.reduce((a,s) => a + s.subs.length, 0)} competencies</div>
+        <div style="font-size:10px; color:#475569; margin-top:3px;">${role.skills.length} skills · ${role.skills.reduce((a, s) => a + s.subs.length, 0)} competencies</div>
       </div>`;
       if (role) {
         role.skills.forEach(skill => {
@@ -929,10 +1057,19 @@ function initGraph(filterPodId) {
           </div>`;
         });
       }
+    } else if (node.type === 'skill') {
+      const pod = SKILL_GRAPH.find(p => p.id === node.parentPod);
+      html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
+        <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">${pod ? pod.name : 'Skill'}</div>
+        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
+        <div style="font-size:10px; color:#475569; margin-top:3px;">${node.subs.length} atomic competencies</div>
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        ${node.subs.map(s => `<span style="font-size:10px; padding:3px 8px; border-radius:4px; background:${node.color}12; color:${node.color}; border:1px solid ${node.color}20;">${s}</span>`).join('')}
+      </div>`;
     }
     hoverPanel.innerHTML = html;
     hoverPanel.style.display = 'block';
-    // Position near cursor, keep on screen
     let px = mx + 20, py = my - 20;
     if (px + 320 > window.innerWidth) px = mx - 330;
     if (py + 440 > window.innerHeight) py = window.innerHeight - 440;
@@ -943,14 +1080,18 @@ function initGraph(filterPodId) {
 
   function hideHoverPanel() { hoverPanel.style.display = 'none'; }
 
-  // ── Hit detection ──
+  // ── Hit detection — hub, pods, roles, skills ──
   function findNode(sx, sy) {
     const [wx, wy] = screenToWorld(sx, sy);
-    // Pods first, then roles
-    const ordered = [...nodes.filter(n => n.type === 'pod'), ...nodes.filter(n => n.type === 'role')];
+    const ordered = [
+      ...(hubNode ? [hubNode] : []),
+      ...nodes.filter(n => n.type === 'pod'),
+      ...nodes.filter(n => n.type === 'role'),
+      ...nodes.filter(n => n.type === 'skill')
+    ];
     for (const n of ordered) {
       const dx = wx - n.x, dy = wy - n.y;
-      const hitR = Math.max(n.r * 2, 12);
+      const hitR = Math.max(n.r * 2, 14);
       if (dx * dx + dy * dy < hitR * hitR) return n;
     }
     return null;
@@ -960,7 +1101,7 @@ function initGraph(filterPodId) {
   canvas.addEventListener('mousedown', e => {
     const rect = canvas.getBoundingClientRect();
     const node = findNode(e.clientX - rect.left, e.clientY - rect.top);
-    if (node) { dragNode = node; canvas.classList.add('dragging-node'); }
+    if (node && node.type !== 'hub') { dragNode = node; canvas.classList.add('dragging-node'); }
     else dragging = true;
     lastMouse = { x: e.clientX, y: e.clientY };
   });
@@ -994,7 +1135,7 @@ function initGraph(filterPodId) {
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const [wx, wy] = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-    zoom = Math.max(0.3, Math.min(8, zoom * (e.deltaY > 0 ? 0.9 : 1.11)));
+    zoom = Math.max(0.06, Math.min(10, zoom * (e.deltaY > 0 ? 0.9 : 1.11)));
     camX = wx - (e.clientX - rect.left - W / 2) / zoom;
     camY = wy - (e.clientY - rect.top - H / 2) / zoom;
   }, { passive: false });
@@ -1005,11 +1146,12 @@ function initGraph(filterPodId) {
     if (!node) return;
     if (node.type === 'pod') setState({ view: 'pod', activePod: node.id, search: '' });
     else if (node.type === 'role') setState({ view: 'role', activePod: node.parentPod, activeRole: node.id, search: '' });
+    else if (node.type === 'skill') { setState({ view: 'role', activePod: node.parentPod, activeRole: node.parentRole, search: '' }); setTimeout(() => setState({ expandedSkills: { ...state.expandedSkills, [node.id]: true } }), 50); }
   });
 
-  window.graphZoomIn = () => { zoom = Math.min(8, zoom * 1.3); };
-  window.graphZoomOut = () => { zoom = Math.max(0.3, zoom * 0.77); };
-  window.graphReset = () => { zoom = 1; camX = 0; camY = 0; };
+  window.graphZoomIn = () => { zoom = Math.min(10, zoom * 1.4); };
+  window.graphZoomOut = () => { zoom = Math.max(0.06, zoom * 0.7); };
+  window.graphReset = () => { zoom = filterPodId ? 0.45 : 0.18; camX = 0; camY = 0; };
 
   const onResize = () => resize();
   window.addEventListener('resize', onResize);
