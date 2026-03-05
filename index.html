@@ -733,10 +733,10 @@ function buildGraphData(filterPodId) {
   const pods = filterPodId ? SKILL_GRAPH.filter(p => p.id === filterPodId) : SKILL_GRAPH;
 
   pods.forEach(pod => {
-    nodes.push({ id: pod.id, label: pod.name, type: 'pod', color: pod.color, r: 24, desc: pod.description });
+    nodes.push({ id: pod.id, label: pod.name, type: 'pod', color: pod.color, r: 30, desc: pod.description });
     pod.roles.forEach(role => {
       const roleId = role.id;
-      nodes.push({ id: roleId, label: role.name, type: 'role', color: pod.color, r: 10, parentPod: pod.id });
+      nodes.push({ id: roleId, label: role.name, type: 'role', color: pod.color, r: 12, parentPod: pod.id });
       edges.push({ source: pod.id, target: roleId });
       role.skills.forEach(skill => {
         nodes.push({ id: skill.id, label: skill.name, type: 'skill', color: pod.color, r: 4.5, subs: skill.subs, parentRole: roleId, parentPod: pod.id });
@@ -764,58 +764,72 @@ function initGraph(filterPodId) {
   }
   resize();
 
-  // Position nodes
+  // Position nodes — spread pods wide in a circle, children orbit parents
   const cx = W / 2, cy = H / 2;
-  const podCount = nodes.filter(n => n.type === 'pod').length;
+  const podNodes = nodes.filter(n => n.type === 'pod');
+  const podCount = podNodes.length;
+  const spreadRadius = Math.max(W, H) * 0.7;
   let podIdx = 0;
   const nodeMap = {};
-  nodes.forEach(n => {
-    nodeMap[n.id] = n;
-    if (n.type === 'pod') {
-      const angle = (podIdx / podCount) * Math.PI * 2 - Math.PI / 2;
-      const spread = Math.min(W, H) * 0.3;
-      n.x = cx + Math.cos(angle) * spread;
-      n.y = cy + Math.sin(angle) * spread;
-      podIdx++;
-    } else if (n.type === 'role') {
-      const parent = nodeMap[n.parentPod];
-      n.x = parent.x + (Math.random() - 0.5) * 120;
-      n.y = parent.y + (Math.random() - 0.5) * 120;
-    } else {
-      const parent = nodeMap[n.parentRole];
-      n.x = parent ? parent.x + (Math.random() - 0.5) * 80 : cx + (Math.random() - 0.5) * 200;
-      n.y = parent ? parent.y + (Math.random() - 0.5) * 80 : cy + (Math.random() - 0.5) * 200;
-    }
+  nodes.forEach(n => { nodeMap[n.id] = n; });
+  // Place pods first in a wide circle
+  podNodes.forEach(n => {
+    const angle = (podIdx / podCount) * Math.PI * 2 - Math.PI / 2;
+    n.x = cx + Math.cos(angle) * spreadRadius;
+    n.y = cy + Math.sin(angle) * spreadRadius;
+    n.vx = 0; n.vy = 0;
+    podIdx++;
+  });
+  // Place roles near their pod
+  nodes.filter(n => n.type === 'role').forEach(n => {
+    const parent = nodeMap[n.parentPod];
+    const a = Math.random() * Math.PI * 2;
+    n.x = parent.x + Math.cos(a) * 180 + (Math.random() - 0.5) * 60;
+    n.y = parent.y + Math.sin(a) * 180 + (Math.random() - 0.5) * 60;
+    n.vx = 0; n.vy = 0;
+  });
+  // Place skills near their role
+  nodes.filter(n => n.type === 'skill').forEach(n => {
+    const parent = nodeMap[n.parentRole];
+    const a = Math.random() * Math.PI * 2;
+    const r = 60 + Math.random() * 80;
+    n.x = parent ? parent.x + Math.cos(a) * r : cx + (Math.random() - 0.5) * 400;
+    n.y = parent ? parent.y + Math.sin(a) * r : cy + (Math.random() - 0.5) * 400;
     n.vx = 0; n.vy = 0;
   });
 
   // Edge source/target to objects
   const edgeObjs = edges.map(e => ({ source: nodeMap[e.source], target: nodeMap[e.target] }));
 
-  // Camera
-  let camX = 0, camY = 0, zoom = 1;
+  // Camera — start zoomed out to see the full spread
+  let camX = 0, camY = 0, zoom = filterPodId ? 0.8 : 0.35;
   let dragging = false, dragNode = null, lastMouse = null;
   let hoveredNode = null;
 
-  // Simulation
+  // Simulation — slow decay so it has time to spread out
   const alpha = { value: 1 };
-  const alphaDecay = 0.003;
-  const alphaMin = 0.005;
+  const alphaDecay = 0.002;
+  const alphaMin = 0.003;
   let running = true;
 
   function simulate() {
     if (alpha.value < alphaMin) { running = false; draw(); return; }
     alpha.value *= (1 - alphaDecay);
 
-    // Repulsion (Barnes-Hut simplified — pairwise for this scale)
+    // Repulsion — much stronger, type-aware
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         const a = nodes[i], b = nodes[j];
         let dx = b.x - a.x, dy = b.y - a.y;
         let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const minDist = (a.r + b.r) * 3 + 30;
+        // Pods repel each other extremely strongly
+        let repulse = 3000;
+        if (a.type === 'pod' && b.type === 'pod') repulse = 80000;
+        else if (a.type === 'pod' || b.type === 'pod') repulse = 8000;
+        else if (a.type === 'role' && b.type === 'role') repulse = 5000;
+        const minDist = (a.r + b.r) + 15;
         if (dist < minDist) dist = minDist;
-        const strength = -800 / (dist * dist);
+        const strength = -repulse / (dist * dist);
         const fx = dx / dist * strength * alpha.value;
         const fy = dy / dist * strength * alpha.value;
         a.vx -= fx; a.vy -= fy;
@@ -823,29 +837,29 @@ function initGraph(filterPodId) {
       }
     }
 
-    // Attraction along edges
+    // Attraction along edges — longer ideal lengths
     edgeObjs.forEach(e => {
       const dx = e.target.x - e.source.x;
       const dy = e.target.y - e.source.y;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const idealLen = e.source.type === 'pod' ? 140 : 70;
-      const strength = (dist - idealLen) * 0.03 * alpha.value;
+      const idealLen = e.source.type === 'pod' ? 250 : 100;
+      const strength = (dist - idealLen) * 0.015 * alpha.value;
       const fx = dx / dist * strength;
       const fy = dy / dist * strength;
       e.source.vx += fx; e.source.vy += fy;
       e.target.vx -= fx; e.target.vy -= fy;
     });
 
-    // Center gravity
+    // Very gentle center gravity — just prevent drift to infinity
     nodes.forEach(n => {
-      n.vx += (cx - n.x) * 0.0005 * alpha.value;
-      n.vy += (cy - n.y) * 0.0005 * alpha.value;
+      n.vx += (cx - n.x) * 0.00008 * alpha.value;
+      n.vy += (cy - n.y) * 0.00008 * alpha.value;
     });
 
     // Apply velocity with damping
     nodes.forEach(n => {
       if (n === dragNode) return;
-      n.vx *= 0.6; n.vy *= 0.6;
+      n.vx *= 0.55; n.vy *= 0.55;
       n.x += n.vx; n.y += n.vy;
     });
 
@@ -872,39 +886,57 @@ function initGraph(filterPodId) {
       ctx.beginPath();
       ctx.moveTo(e.source.x, e.source.y);
       ctx.lineTo(e.target.x, e.target.y);
-      ctx.strokeStyle = e.source.color + '18';
-      ctx.lineWidth = e.target.type === 'skill' ? 0.5 : 1;
+      ctx.strokeStyle = e.source.color + (e.target.type === 'skill' ? '15' : '30');
+      ctx.lineWidth = e.target.type === 'skill' ? 0.6 : 1.5;
       ctx.stroke();
     });
 
-    // Nodes
-    nodes.forEach(n => {
+    // Nodes — draw skills first, then roles, then pods on top
+    const drawOrder = [...nodes.filter(n => n.type === 'skill'), ...nodes.filter(n => n.type === 'role'), ...nodes.filter(n => n.type === 'pod')];
+    drawOrder.forEach(n => {
       const isHovered = hoveredNode === n;
       ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r * (isHovered ? 1.3 : 1), 0, Math.PI * 2);
+      ctx.arc(n.x, n.y, n.r * (isHovered ? 1.4 : 1), 0, Math.PI * 2);
       if (n.type === 'pod') {
         ctx.fillStyle = n.color;
         ctx.shadowColor = n.color;
-        ctx.shadowBlur = isHovered ? 20 : 10;
+        ctx.shadowBlur = isHovered ? 30 : 16;
       } else if (n.type === 'role') {
-        ctx.fillStyle = n.color + 'aa';
+        ctx.fillStyle = n.color + 'bb';
         ctx.shadowColor = n.color;
-        ctx.shadowBlur = isHovered ? 12 : 4;
+        ctx.shadowBlur = isHovered ? 14 : 5;
       } else {
-        ctx.fillStyle = n.color + '55';
+        ctx.fillStyle = n.color + '66';
         ctx.shadowBlur = 0;
       }
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Labels for pods always, roles if zoomed or hovered
-      if (n.type === 'pod' || (n.type === 'role' && (zoom > 0.8 || isHovered)) || (n.type === 'skill' && (zoom > 2 || isHovered))) {
-        ctx.font = n.type === 'pod' ? '600 11px Inter, sans-serif' : n.type === 'role' ? '500 9px Inter, sans-serif' : '400 7px Inter, sans-serif';
-        ctx.fillStyle = n.type === 'pod' ? '#fff' : n.type === 'role' ? '#cbd5e1' : '#64748b';
+      // Pod labels: always visible, large and bold
+      if (n.type === 'pod') {
+        ctx.font = '700 14px Inter, sans-serif';
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        const label = n.label.length > 28 ? n.label.slice(0, 26) + '...' : n.label;
-        ctx.fillText(label, n.x, n.y + n.r + 4);
+        ctx.fillText(n.label, n.x, n.y + n.r + 8);
+      }
+      // Role labels: visible when zoomed > 0.5 or hovered
+      else if (n.type === 'role' && (zoom > 0.5 || isHovered)) {
+        ctx.font = '500 10px Inter, sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const label = n.label.length > 30 ? n.label.slice(0, 28) + '...' : n.label;
+        ctx.fillText(label, n.x, n.y + n.r + 5);
+      }
+      // Skill labels: only when zoomed way in or hovered
+      else if (n.type === 'skill' && (zoom > 1.8 || isHovered)) {
+        ctx.font = '400 8px Inter, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const label = n.label.length > 32 ? n.label.slice(0, 30) + '...' : n.label;
+        ctx.fillText(label, n.x, n.y + n.r + 3);
       }
     });
 
