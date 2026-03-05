@@ -410,6 +410,278 @@ const SKILL_GRAPH = [
         ]
       }
     ]
+  },
+  {
+    id: 'crm-pipeline',
+    name: 'CRM & Pipeline (Twenty)',
+    color: '#3b82f6',
+    description: 'Lead management, deal tracking, company relationships, tasks, and CRM schema design via Twenty CRM',
+    roles: [
+      {
+        id: 'crm-admin',
+        name: 'CRM Administrator',
+        skills: [
+          { id: 'crm-schema-design', name: 'Object & Schema Management', subs: ['Custom object creation & field architecture', 'Field types (text, number, currency, relation, select)', 'Relation mapping (one-to-many, many-to-many)', 'Metadata introspection & GraphQL schema exploration', 'API key management & access control'] },
+          { id: 'crm-views-layouts', name: 'View & Layout Design', subs: ['View creation (kanban, table, calendar)', 'View filters, sorts, and groups', 'View field selection & ordering', 'Page layout configuration (tabs, widgets)', 'Favorite views & folder organization'] },
+          { id: 'crm-pipeline-config', name: 'Pipeline Configuration', subs: ['Opportunity stage definitions (LEAD > QUALIFIED > NEGOTIATION > WON/LOST)', 'Deal workflow automation triggers', 'Probability mapping per stage', 'Currency & amount handling (micros conversion)'] },
+          { id: 'crm-data-governance', name: 'Data Governance', subs: ['Duplicate detection & merge operations', 'Bulk create / update / delete (batch of 60)', 'Data hygiene (field completeness, format standards)', 'Import/export workflows', 'Soft delete & restore operations'] },
+        ]
+      },
+      {
+        id: 'pipeline-manager',
+        name: 'Pipeline & Deal Manager',
+        skills: [
+          { id: 'opportunity-mgmt', name: 'Opportunity Management', subs: ['Deal creation with stage, amount, probability, close date', 'Stage progression tracking', 'Company & point-of-contact linking', 'Pipeline value & velocity reporting', 'Won/lost analysis'] },
+          { id: 'company-mgmt', name: 'Company Management', subs: ['Company record creation (name, domain, employees, LinkedIn)', 'Ideal customer profile (ICP) flagging', 'Company hierarchy & relationship mapping', 'Enrichment from external data sources'] },
+          { id: 'people-mgmt', name: 'Contact / People Management', subs: ['Person creation (name, email, phone, job title, city)', 'Company-to-person linking', 'LinkedIn profile tracking', 'Batch creation for bulk imports (60 at a time)', 'Cross-platform sync (Twenty > Chatwoot > Plunk)'] },
+          { id: 'crm-activity', name: 'Activity Tracking', subs: ['Note creation linked to people or companies', 'Task creation with due dates and assignees', 'Task target linking (task > person/company)', 'Timeline activity logging', 'Calendar event management'] },
+          { id: 'crm-dashboards', name: 'Dashboards & Reporting', subs: ['Dashboard creation & duplication', 'Favorite pinning & folder organization', 'Pipeline stage distribution (group by)', 'Revenue forecasting from opportunity data', 'Workspace member activity tracking'] },
+        ]
+      },
+      {
+        id: 'crm-integrations',
+        name: 'CRM Integrations Specialist',
+        skills: [
+          { id: 'crm-connected-accounts', name: 'Connected Accounts', subs: ['OAuth account connections', 'Email sync configuration', 'Calendar sync setup', 'Provider-specific settings'] },
+          { id: 'crm-message-channels', name: 'Message Channels & Threads', subs: ['Message channel configuration', 'Channel-message association mapping', 'Thread management & participant tracking', 'Message folder organization'] },
+          { id: 'crm-workflows', name: 'Workflow Automation', subs: ['Workflow creation & version management', 'Automated trigger configuration', 'Workflow run monitoring & history', 'Conditional branching logic'] },
+          { id: 'crm-webhooks-api', name: 'API & Webhooks', subs: ['Webhook endpoint registration', 'Event subscription management', 'API key provisioning & rotation', 'GraphQL query authoring for edge cases'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'customer-support',
+    name: 'Customer Support (Chatwoot)',
+    color: '#ef4444',
+    description: 'Conversation management, agent routing, team operations, and support analytics via Chatwoot',
+    roles: [
+      {
+        id: 'support-ops-manager',
+        name: 'Support Operations Manager',
+        skills: [
+          { id: 'inbox-architecture', name: 'Inbox Architecture', subs: ['Inbox creation per channel (WhatsApp, email, web, API)', 'Channel-specific configuration & branding', 'Agent assignment to inboxes', 'Inbox-level CSAT tracking', 'Agent bot attachment to inboxes'] },
+          { id: 'team-structure', name: 'Team Structure & Routing', subs: ['Team creation (name, description, auto-assign)', 'Member management (add/remove agents)', 'Team-based conversation routing', 'Load balancing across agents', 'Cross-team escalation paths'] },
+          { id: 'agent-management', name: 'Agent Management', subs: ['Agent provisioning (name, email, role)', 'Role assignment (agent, administrator)', 'Availability management (online, busy, offline)', 'Agent performance monitoring', 'Profile management'] },
+          { id: 'support-automation-rules', name: 'Automation Rules (Native)', subs: ['Auto-assign rules (round-robin, skill-based)', 'Auto-label on keyword match', 'Auto-respond based on conditions', 'SLA-based escalation triggers', 'Event-condition-action rule design'] },
+          { id: 'canned-responses', name: 'Canned Responses & Templates', subs: ['Template creation (short_code, content, title)', 'Variable interpolation ({{contact.name}}, etc.)', 'Template categorization & search', 'Multi-language template management'] },
+          { id: 'label-taxonomy', name: 'Label Taxonomy', subs: ['Label creation (title, description, color)', 'Sidebar visibility configuration', 'Contact vs conversation label strategy', 'Label-based reporting & filtering'] },
+        ]
+      },
+      {
+        id: 'support-agent',
+        name: 'Support Agent / Specialist',
+        skills: [
+          { id: 'conversation-lifecycle', name: 'Conversation Lifecycle', subs: ['Status management (open > pending > resolved > snoozed)', 'Priority setting (none > low > medium > high > urgent)', 'Assignment (to self, to agent, to team)', 'Snooze with future wake time', 'Mute/unmute for noise control'] },
+          { id: 'message-handling', name: 'Message Handling', subs: ['Outgoing replies to customers', 'Private notes (agent-only, invisible to customer)', 'Draft message management', 'Message editing & deletion', 'Content formatting & media references'] },
+          { id: 'contact-ops', name: 'Contact Operations', subs: ['Contact search (by name, email, phone)', 'Advanced filtering (multi-condition, attribute-based)', 'Contact merge (deduplication)', 'Label assignment to contacts', 'Contact note creation & management', 'Contactable inbox lookup'] },
+          { id: 'escalation-routing', name: 'Escalation & Routing', subs: ['Priority escalation workflow', 'Team re-routing', 'Participant addition for collaboration', 'Private note with escalation context', 'Label-based escalation tracking'] },
+          { id: 'conversation-context', name: 'Context & History', subs: ['Conversation activity log review', 'Contact conversation history lookup', 'Custom attribute reading & updating', 'Conversation label management', 'Conversation metrics (response time, resolution time)'] },
+        ]
+      },
+      {
+        id: 'support-analytics',
+        name: 'Support Analytics Specialist',
+        skills: [
+          { id: 'performance-reporting', name: 'Performance Reporting', subs: ['Account summary (total conversations, messages, resolution time)', 'Agent summary (per-agent conversation/message/time stats)', 'Inbox summary (per-channel performance)', 'Team summary (per-team routing efficiency)', 'Label summary (issue category distribution)'] },
+          { id: 'csat-analysis', name: 'CSAT Analysis', subs: ['CSAT reports per inbox', 'Response rate tracking', 'Satisfaction score trends over time', 'Agent-level CSAT breakdown'] },
+          { id: 'conversation-metrics', name: 'Conversation Metrics', subs: ['Conversation count trends (daily/weekly/monthly)', 'Resolution time analysis', 'First response time tracking', 'Open vs pending vs resolved distribution', 'Overview reports (time-series data)'] },
+          { id: 'custom-filters', name: 'Advanced Filtering & Segmentation', subs: ['Custom filter creation (multi-condition)', 'Filter by assignee, team, inbox, label, status', 'Filter by custom attributes', 'Saved filter management for recurring reports'] },
+        ]
+      },
+      {
+        id: 'knowledge-base-mgr',
+        name: 'Knowledge Base Manager',
+        skills: [
+          { id: 'portal-management', name: 'Portal Management', subs: ['Portal creation (name, slug, domain)', 'Portal configuration & branding', 'Multi-portal architecture for different clients'] },
+          { id: 'article-management', name: 'Article Management', subs: ['Article creation (title, content, status)', 'Article categorization & tagging', 'Publishing workflow (draft > published)', 'Article search & discovery optimization'] },
+          { id: 'category-architecture', name: 'Category Architecture', subs: ['Category hierarchy design', 'Category creation & ordering', 'Navigation structure optimization', 'Content gap identification'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'platform-automation',
+    name: 'Platform Automation (Zavis)',
+    color: '#10b981',
+    description: 'Workflow automation, job scheduling, cross-platform pipelines, and event-driven scripting',
+    roles: [
+      {
+        id: 'automation-engineer',
+        name: 'Automation Engineer',
+        skills: [
+          { id: 'job-scheduling', name: 'Job Scheduling (pg-boss)', subs: ['Cron expression design (0 9 * * 1 = every Monday 9am)', 'Interval scheduling (every N minutes)', 'One-shot future-dated jobs', 'Job queue management & monitoring', 'Retry logic & dead-letter handling'] },
+          { id: 'webhook-handlers', name: 'Webhook Handlers', subs: ['Inbound webhook processing', 'Chatwoot event types (message_created, conversation_status_changed, etc.)', 'Payload parsing & validation', 'Event routing to correct handler', 'Event storage & replay for debugging'] },
+          { id: 'pipeline-design', name: 'Pipeline Design', subs: ['Multi-step workflow configuration (JSON pipeline)', 'Conditional branching (if/else on data)', 'Error handling & graceful degradation', 'Idempotency design (same input = same outcome)', 'Pipeline config stored in automation record'] },
+          { id: 'script-development', name: 'Script Development', subs: ['TypeScript automation scripts', 'API client usage (Chatwoot, Twenty, Plunk clients)', 'Context logging (ctx.log for run records)', 'Input/output contract design', 'Script testing with manual trigger + sample payload'] },
+          { id: 'automation-lifecycle', name: 'Automation Lifecycle', subs: ['Create automation (name, type, trigger, script_path)', 'Status management (DRAFT > ACTIVE > PAUSED)', 'Manual trigger for testing', 'Run history & log inspection', 'Update config, trigger, and status'] },
+        ]
+      },
+      {
+        id: 'integration-specialist',
+        name: 'Integration Specialist',
+        skills: [
+          { id: 'cross-platform-sync', name: 'Cross-Platform Sync', subs: ['Chatwoot-to-Twenty contact sync (email matching)', 'Twenty-to-Plunk subscriber sync', 'Bi-directional field mapping', 'Deduplication across platforms (Chatwoot numeric ID vs Twenty UUID vs Plunk string ID)', 'Incremental sync vs full sync strategies'] },
+          { id: 'data-pipelines', name: 'Data Pipelines', subs: ['ETL between Chatwoot, Twenty, Plunk', 'Batch processing (60 records per batch in Twenty)', 'Data transformation & normalization', 'Error logging & partial failure handling', 'Pipeline monitoring & alerting'] },
+          { id: 'event-architecture', name: 'Event-Driven Architecture', subs: ['Plunk event tracking (zavis_track_event)', 'Event > email sequence triggering', 'Webhook event subscription management', 'Fan-out patterns (one event triggers multiple actions)', 'Event replay for debugging'] },
+          { id: 'api-orchestration', name: 'API Orchestration', subs: ['Rate limiting & throttling awareness', 'Authentication management across platforms', 'Pagination handling for large datasets', 'GraphQL vs REST API patterns', '129 MCP tool coordination'] },
+        ]
+      },
+      {
+        id: 'automation-qa',
+        name: 'Automation QA & Monitoring',
+        skills: [
+          { id: 'run-monitoring', name: 'Run Monitoring', subs: ['Run history inspection (zavis_list_automation_runs)', 'Log analysis from run records', 'Error classification & alerting', 'Success rate tracking over time'] },
+          { id: 'automation-testing', name: 'Testing', subs: ['Manual trigger with sample payloads', 'Recent event replay (zavis_get_recent_event_for_automation)', 'Dry-run execution patterns', 'Edge case testing (empty data, malformed input)'] },
+          { id: 'automation-perf', name: 'Performance & Reliability', subs: ['Queue depth monitoring', 'Execution time optimization', 'Concurrency & race condition prevention', 'Dead letter queue management'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'client-onboarding',
+    name: 'Client Onboarding (Zavis)',
+    color: '#f59e0b',
+    description: 'New client registration, contract setup, channel provisioning, and go-live workflows',
+    roles: [
+      {
+        id: 'onboarding-specialist',
+        name: 'Onboarding Specialist',
+        skills: [
+          { id: 'client-registration', name: 'Client Registration', subs: ['Account creation (name, domain, plan tier)', 'Profile configuration (industry, size, region)', 'Activation & deactivation workflows', 'Client status management', 'Onboarding date scheduling'] },
+          { id: 'contract-setup', name: 'Contract & Revenue Setup', subs: ['Full contract creation (terms, pricing, duration)', 'Revenue stream assignment (per-seat, flat fee, usage-based)', 'Partner assignment & commission linking', 'Contract lifecycle (draft > active > expired)', 'Multi-contract management per client'] },
+          { id: 'onboarding-checklist', name: 'Onboarding Checklist', subs: ['Progress tracking (checklist status per step)', 'Go-live readiness assessment', 'Dependency tracking (inbox before agents, agents before routing)', 'Blocker identification & resolution', 'Client-facing status communication'] },
+          { id: 'partner-management', name: 'Partner Management', subs: ['Partner assignment to client', 'Commission structure configuration', 'Partner removal & reassignment', 'Partner-client relationship tracking', 'Multi-partner scenarios'] },
+        ]
+      },
+      {
+        id: 'channel-setup',
+        name: 'Channel Setup Specialist',
+        skills: [
+          { id: 'inbox-provisioning', name: 'Inbox Provisioning', subs: ['Inbox creation per channel type (WhatsApp, email, web, API)', 'Channel-specific configuration', 'Inbox agent assignment', 'Inbox listing & inspection', 'Inbox deletion & cleanup'] },
+          { id: 'agent-provisioning', name: 'Agent & Team Provisioning', subs: ['Agent creation (name, email, role)', 'Team creation (name, description)', 'Agent-to-inbox assignment', 'Agent-to-team assignment', 'Role & permission setup'] },
+          { id: 'automation-setup', name: 'Automation & Template Setup', subs: ['Chatwoot automation rule creation', 'Canned response provisioning', 'Custom attribute definitions (contact & conversation)', 'Label creation & taxonomy', 'Webhook registration for integrations'] },
+        ]
+      },
+      {
+        id: 'data-migration',
+        name: 'Data Migration Specialist',
+        skills: [
+          { id: 'contact-import', name: 'Contact Import', subs: ['Single contact import with field mapping', 'Bulk import (batch processing)', 'Import status tracking & error resolution', 'Contact search & verification post-import', 'Deduplication during import'] },
+          { id: 'data-validation', name: 'Data Validation & QA', subs: ['Field format standardization (phone, email)', 'Required field completeness check', 'Cross-platform data consistency verification', 'Import rollback planning', 'Post-migration audit'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'financial-ops',
+    name: 'Financial Operations (Zavis)',
+    color: '#8b5cf6',
+    description: 'Invoicing, payments, revenue tracking, partner commissions, payroll, and financial modeling',
+    roles: [
+      {
+        id: 'financial-analyst',
+        name: 'Financial Analyst',
+        skills: [
+          { id: 'revenue-management', name: 'Revenue Management', subs: ['Revenue stream creation & tracking (per-client)', 'Revenue concentration analysis (client dependency risk)', 'MRR / ARR calculation & trending', 'Revenue projection modeling', 'Client-level P&L analysis'] },
+          { id: 'cost-management', name: 'Cost Management', subs: ['Cost recording & categorization', 'Fixed vs variable cost tracking', 'Cost trend analysis over time', 'Margin calculation per client/service'] },
+          { id: 'financial-dashboards', name: 'Dashboard & Metrics', subs: ['Financial dashboard metrics (zavis_fin_dashboard_metrics)', 'Snapshot capture & comparison over time', 'KPI monitoring (MRR, churn, LTV, CAC)', 'Period-over-period analysis'] },
+          { id: 'whatif-modeling', name: 'What-If Modeling', subs: ['Scenario creation (growth, churn, pricing changes)', 'Sensitivity analysis on key variables', 'Revenue impact simulation', 'Scenario comparison & decision support'] },
+          { id: 'sales-goals', name: 'Sales Goals & Tracking', subs: ['Goal setting (quarterly, annual targets)', 'Attainment tracking vs targets', 'Goal update & adjustment', 'Sales pipeline to goal alignment'] },
+        ]
+      },
+      {
+        id: 'billing-specialist',
+        name: 'Billing & Invoicing Specialist',
+        skills: [
+          { id: 'invoice-management', name: 'Invoice Management', subs: ['Invoice creation (client, line items, amounts, tax)', 'Invoice sending via platform', 'Invoice status tracking (draft > sent > paid > void)', 'Invoice voiding & credit notes', 'Sequence number generation (zavis_fin_get_next_sequence)'] },
+          { id: 'payment-processing', name: 'Payment Processing', subs: ['Payment recording against invoices', 'Payment method tracking', 'Partial payment handling', 'Payment history & reconciliation'] },
+          { id: 'receivables', name: 'Receivables Management', subs: ['AR tracking & aging analysis', 'Receivable creation & status updates', 'Collection workflow triggers', 'Outstanding balance reporting'] },
+          { id: 'catalog-pricing', name: 'Catalog & Pricing', subs: ['Catalog item management (products, services, add-ons)', 'Pricing report generation', 'Tier-based pricing (Pro 899, Elite 1499, Ultimate 2499 AED)', 'Per-seat pricing calculations', 'Pricing change impact analysis'] },
+        ]
+      },
+      {
+        id: 'payroll-partner-finance',
+        name: 'Payroll & Partner Finance',
+        skills: [
+          { id: 'payroll-processing', name: 'Payroll Processing', subs: ['Payroll entry creation (employee, amount, period)', 'Payroll listing & history', 'Entry updates & corrections', 'Period-based payroll reporting'] },
+          { id: 'partner-commissions', name: 'Partner Commissions', subs: ['Commission calculation (zavis_fin_partner_commissions)', 'Partner performance tracking', 'Customer-partner link management', 'Payout tracking & reconciliation', 'Commission structure configuration'] },
+          { id: 'action-logging', name: 'Action & Audit Logging', subs: ['Financial action log creation', 'Audit trail for all financial operations', 'Action log querying & filtering', 'Compliance documentation'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'email-comms-plunk',
+    name: 'Email & Communications (Plunk)',
+    color: '#0ea5e9',
+    description: 'Transactional email, campaign management, event tracking, and subscriber operations via Plunk',
+    roles: [
+      {
+        id: 'email-ops',
+        name: 'Email Operations Specialist',
+        skills: [
+          { id: 'transactional-email', name: 'Transactional Email', subs: ['Single recipient email sending', 'Multi-recipient batch sending', 'HTML email body composition', 'From name & address configuration', 'Delivery status tracking'] },
+          { id: 'campaign-management-plunk', name: 'Campaign Management', subs: ['Campaign creation (subject, body, style)', 'Recipient list building from contact IDs', 'Campaign sending & scheduling', 'Campaign performance tracking', 'A/B subject line testing'] },
+          { id: 'event-tracking', name: 'Event-Driven Sequences', subs: ['Event tracking (zavis_track_event)', 'Event-to-sequence triggering', 'Custom event data payloads', 'Auto-contact creation on event', 'Sequence performance monitoring'] },
+          { id: 'plunk-contact-mgmt', name: 'Subscriber Management', subs: ['Contact creation with custom metadata', 'Subscription management (subscribe/unsubscribe)', 'Contact listing with pagination', 'Contact count & segmentation', 'Contact data updates & enrichment'] },
+        ]
+      },
+      {
+        id: 'email-template-designer',
+        name: 'Email Template Designer',
+        skills: [
+          { id: 'email-html-design', name: 'HTML Email Design', subs: ['Table-based layouts for email clients', 'Responsive email techniques', 'Dark mode compatibility', 'Cross-client rendering (Gmail, Outlook, Apple Mail)', 'Inline CSS for maximum compatibility'] },
+          { id: 'email-content-strategy', name: 'Email Content Strategy', subs: ['Subject line optimization', 'Preview text crafting', 'CTA placement & design', 'Personalization via merge fields', 'Plain text fallback creation'] },
+          { id: 'email-sequences', name: 'Sequence Design', subs: ['Welcome sequence architecture', 'Onboarding drip campaigns', 'Re-engagement sequences', 'Event-triggered follow-ups', 'Sequence timing & cadence optimization'] },
+        ]
+      }
+    ]
+  },
+  {
+    id: 'zavis-platform',
+    name: 'Zavis Platform & Product',
+    color: '#00c853',
+    description: 'Patient success platform operations, AI agents, WhatsApp workflows, and healthcare marketing',
+    roles: [
+      {
+        id: 'patient-success-ops',
+        name: 'Patient Success Operator',
+        skills: [
+          { id: 'appointment-workflows', name: 'Appointment Workflows', subs: ['Tiered reminders (72h, 24h, 2h) via WhatsApp', 'No-show detection & recovery sequences', 'Cancellation rescheduling automation', 'Confirmation collection & status tracking', 'Voice AI escalation for high-risk patients'] },
+          { id: 'patient-communication', name: 'Patient Communication', subs: ['WhatsApp Business API message design', 'Approved template management (24h window rules)', 'Multi-channel orchestration (WhatsApp, SMS, email, voice, web)', 'Personalization with patient data', 'Opt-in / opt-out compliance'] },
+          { id: 'dormant-reactivation', name: 'Dormant Patient Reactivation', subs: ['N-day inactivity detection rules', 'Win-back sequence design', 'Re-engagement offer crafting', 'Reactivation success measurement', 'Segment-based reactivation (service type, recency)'] },
+          { id: 'feedback-collection', name: 'Feedback & Post-Visit Care', subs: ['Automated feedback collection post-visit', 'NPS / satisfaction survey design', 'Review solicitation workflows', 'Negative feedback escalation', 'Follow-up care reminders'] },
+        ]
+      },
+      {
+        id: 'ai-agent-ops',
+        name: 'AI Agent Operator',
+        skills: [
+          { id: 'ai-agent-config', name: 'AI Agent Configuration', subs: ['Patient Intake Agent setup', 'Appointment Reminder Agent tuning', 'No-Show Recovery Agent workflows', 'Feedback Collector Agent design', 'Post-Visit Care Agent sequences'] },
+          { id: 'agent-monitoring', name: 'Agent Monitoring & QA', subs: ['Conversation quality review', 'Response accuracy tracking', 'Escalation-to-human trigger tuning', 'Edge case identification & training', 'Agent performance dashboarding'] },
+          { id: 'agent-bot-mgmt', name: 'Agent Bot Management', subs: ['Bot creation & configuration', 'Bot-to-inbox assignment', 'Bot response flow design', 'Bot handoff-to-human rules', 'Bot performance metrics'] },
+        ]
+      },
+      {
+        id: 'healthcare-marketing',
+        name: 'Healthcare Marketing Specialist',
+        skills: [
+          { id: 'healthcare-compliance', name: 'Healthcare Marketing Compliance', subs: ['UAE healthcare advertising regulations', 'Patient data privacy (no PHI in marketing)', 'WhatsApp Business API compliance', 'Consent management for patient communications', 'Medical claims substantiation'] },
+          { id: 'clinic-marketing', name: 'Clinic & Practice Marketing', subs: ['Patient acquisition campaigns', 'Service-specific promotions (dental, aesthetics, etc.)', 'Seasonal campaign planning (Ramadan, summer)', 'Referral program design', 'Google My Business optimization for clinics'] },
+          { id: 'digital-cmo', name: 'Digital CMO Operations', subs: ['AI employee management (goal setting, task assignment)', 'Campaign planning & execution via CMO tool', 'Content generation workflows', 'Marketing goal tracking & KPI dashboarding', 'Multi-clinic campaign coordination'] },
+        ]
+      },
+      {
+        id: 'platform-admin',
+        name: 'Platform Administrator',
+        skills: [
+          { id: 'client-management', name: 'Client Management', subs: ['Client record management (14+ clients)', 'Tier assignment (Pro, Elite, Ultimate)', 'Per-seat pricing configuration (225-269 AED/seat)', 'Client health monitoring', 'Churn risk identification'] },
+          { id: 'ontology-design', name: 'Ontology & Data Architecture', subs: ['10 object types management', '7 link types configuration', '9 action types orchestration', 'Derived property computation via graph traversal', 'Palantir Foundry-inspired data modeling'] },
+          { id: 'platform-integrations', name: 'Platform Integrations', subs: ['Next.js 14 + TypeScript + Tailwind frontend', 'Neon Postgres + Drizzle ORM data layer', 'Vercel deployment management', 'Recharts + Zustand state/visualization', 'MCP server coordination (129 tools)'] },
+        ]
+      }
+    ]
   }
 ];
 
@@ -592,7 +864,7 @@ function renderOverview() {
         <h2 class="text-2xl font-bold text-white mb-1">Skill Pods</h2>
         <p class="text-sm text-slate-500">10 functional verticals. Click to drill down into roles, skills, and atomic competencies.</p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-4 gap-4">
         ${SKILL_GRAPH.map(pod => {
           const s = getPodStats(pod);
           return `
