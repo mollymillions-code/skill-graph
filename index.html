@@ -64,11 +64,11 @@ tailwind.config = {
   #graph-canvas:active { cursor: grabbing; }
   #graph-canvas.dragging-node { cursor: grabbing; }
 
-  .graph-tooltip { position: fixed; z-index: 100; background: #1a1f2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; pointer-events: none; max-width: 320px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
-  .graph-tooltip h4 { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; }
-  .graph-tooltip p { font-size: 11px; color: #94a3b8; margin: 0; line-height: 1.5; }
-  .graph-tooltip .tt-subs { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 3px; }
-  .graph-tooltip .tt-sub { font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.05); color: #64748b; }
+  .graph-tooltip { display: none !important; }
+
+  .graph-hover-panel { position: fixed; z-index: 100; background: rgba(12,15,25,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 18px; pointer-events: none; width: 300px; max-height: 420px; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.7); }
+  .graph-hover-panel::-webkit-scrollbar { width: 3px; }
+  .graph-hover-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
   .view-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.06); }
   .view-toggle button { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 500; color: #64748b; background: transparent; border: none; cursor: pointer; transition: all 0.15s; }
@@ -724,31 +724,10 @@ let state = {
   graphFilter: null, // null = all pods, or pod id
 };
 
-// ─── GRAPH ENGINE ─────────────────────────────────────────────────────
+// ─── GRAPH ENGINE v2 — Deterministic layout + animated particles ──────
 let graphSim = null;
 
-function buildGraphData(filterPodId) {
-  const nodes = [];
-  const edges = [];
-  const pods = filterPodId ? SKILL_GRAPH.filter(p => p.id === filterPodId) : SKILL_GRAPH;
-
-  pods.forEach(pod => {
-    nodes.push({ id: pod.id, label: pod.name, type: 'pod', color: pod.color, r: 30, desc: pod.description });
-    pod.roles.forEach(role => {
-      const roleId = role.id;
-      nodes.push({ id: roleId, label: role.name, type: 'role', color: pod.color, r: 12, parentPod: pod.id });
-      edges.push({ source: pod.id, target: roleId });
-      role.skills.forEach(skill => {
-        nodes.push({ id: skill.id, label: skill.name, type: 'skill', color: pod.color, r: 4.5, subs: skill.subs, parentRole: roleId, parentPod: pod.id });
-        edges.push({ source: roleId, target: skill.id });
-      });
-    });
-  });
-  return { nodes, edges };
-}
-
 function initGraph(filterPodId) {
-  const { nodes, edges } = buildGraphData(filterPodId);
   const canvas = document.getElementById('graph-canvas');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
@@ -764,311 +743,279 @@ function initGraph(filterPodId) {
   }
   resize();
 
-  // Position nodes — spread pods wide in a circle, children orbit parents
-  const cx = W / 2, cy = H / 2;
-  const podNodes = nodes.filter(n => n.type === 'pod');
-  const podCount = podNodes.length;
-  const spreadRadius = Math.max(W, H) * 0.7;
-  let podIdx = 0;
-  const nodeMap = {};
-  nodes.forEach(n => { nodeMap[n.id] = n; });
-  // Place pods first in a wide circle
-  podNodes.forEach(n => {
-    const angle = (podIdx / podCount) * Math.PI * 2 - Math.PI / 2;
-    n.x = cx + Math.cos(angle) * spreadRadius;
-    n.y = cy + Math.sin(angle) * spreadRadius;
-    n.vx = 0; n.vy = 0;
-    podIdx++;
-  });
-  // Place roles near their pod
-  nodes.filter(n => n.type === 'role').forEach(n => {
-    const parent = nodeMap[n.parentPod];
-    const a = Math.random() * Math.PI * 2;
-    n.x = parent.x + Math.cos(a) * 180 + (Math.random() - 0.5) * 60;
-    n.y = parent.y + Math.sin(a) * 180 + (Math.random() - 0.5) * 60;
-    n.vx = 0; n.vy = 0;
-  });
-  // Place skills near their role
-  nodes.filter(n => n.type === 'skill').forEach(n => {
-    const parent = nodeMap[n.parentRole];
-    const a = Math.random() * Math.PI * 2;
-    const r = 60 + Math.random() * 80;
-    n.x = parent ? parent.x + Math.cos(a) * r : cx + (Math.random() - 0.5) * 400;
-    n.y = parent ? parent.y + Math.sin(a) * r : cy + (Math.random() - 0.5) * 400;
-    n.vx = 0; n.vy = 0;
+  // ── Build nodes — solar system layout ──
+  // World origin (0,0) = center of the system
+  const pods = filterPodId ? SKILL_GRAPH.filter(p => p.id === filterPodId) : SKILL_GRAPH;
+  const nodes = [], edges = [];
+  const podCount = pods.length;
+
+  // Layout radii — everything fits at zoom 1
+  const viewR = Math.min(W, H) * 0.5;
+  const podR = filterPodId ? 0 : viewR * 0.7;
+  const roleR = filterPodId ? viewR * 0.55 : 50;
+
+  pods.forEach((pod, pi) => {
+    const a = (pi / podCount) * Math.PI * 2 - Math.PI / 2;
+    const px = Math.cos(a) * podR;
+    const py = Math.sin(a) * podR;
+    const pn = { id: pod.id, label: pod.name, type: 'pod', color: pod.color,
+                 r: filterPodId ? 32 : 20, x: px, y: py, baseX: px, baseY: py,
+                 desc: pod.description, phase: pi * 0.4, podData: pod };
+    nodes.push(pn);
+
+    const rc = pod.roles.length;
+    pod.roles.forEach((role, ri) => {
+      const spread = Math.min(Math.PI * 0.65, rc * 0.28);
+      const ra = a - spread / 2 + (rc > 1 ? (ri / (rc - 1)) * spread : 0);
+      const rx = px + Math.cos(ra) * roleR;
+      const ry = py + Math.sin(ra) * roleR;
+      const rn = { id: role.id, label: role.name, type: 'role', color: pod.color,
+                   r: filterPodId ? 8 : 4.5, x: rx, y: ry, baseX: rx, baseY: ry,
+                   parentPod: pod.id, phase: ri * 0.7 + pi, roleData: role };
+      nodes.push(rn);
+      edges.push({ source: pn, target: rn });
+    });
   });
 
-  // Edge source/target to objects
-  const edgeObjs = edges.map(e => ({ source: nodeMap[e.source], target: nodeMap[e.target] }));
-
-  // Camera — start zoomed out to see the full spread
-  let camX = 0, camY = 0, zoom = filterPodId ? 0.8 : 0.35;
+  // ── Camera ──
+  let camX = 0, camY = 0, zoom = 1;
   let dragging = false, dragNode = null, lastMouse = null;
   let hoveredNode = null;
+  let animFrame = null, running = true;
+  let time = 0;
 
-  // Simulation — slow decay so it has time to spread out
-  const alpha = { value: 1 };
-  const alphaDecay = 0.002;
-  const alphaMin = 0.003;
-  let running = true;
+  function worldToScreen(wx, wy) { return [(wx - camX) * zoom + W / 2, (wy - camY) * zoom + H / 2]; }
+  function screenToWorld(sx, sy) { return [(sx - W / 2) / zoom + camX, (sy - H / 2) / zoom + camY]; }
 
-  function simulate() {
-    if (alpha.value < alphaMin) { running = false; draw(); return; }
-    alpha.value *= (1 - alphaDecay);
-
-    // Repulsion — much stronger, type-aware
-    for (let i = 0; i < nodes.length; i++) {
-      for (let j = i + 1; j < nodes.length; j++) {
-        const a = nodes[i], b = nodes[j];
-        let dx = b.x - a.x, dy = b.y - a.y;
-        let dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        // Pods repel each other extremely strongly
-        let repulse = 3000;
-        if (a.type === 'pod' && b.type === 'pod') repulse = 80000;
-        else if (a.type === 'pod' || b.type === 'pod') repulse = 8000;
-        else if (a.type === 'role' && b.type === 'role') repulse = 5000;
-        const minDist = (a.r + b.r) + 15;
-        if (dist < minDist) dist = minDist;
-        const strength = -repulse / (dist * dist);
-        const fx = dx / dist * strength * alpha.value;
-        const fy = dy / dist * strength * alpha.value;
-        a.vx -= fx; a.vy -= fy;
-        b.vx += fx; b.vy += fy;
-      }
-    }
-
-    // Attraction along edges — longer ideal lengths
-    edgeObjs.forEach(e => {
-      const dx = e.target.x - e.source.x;
-      const dy = e.target.y - e.source.y;
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const idealLen = e.source.type === 'pod' ? 250 : 100;
-      const strength = (dist - idealLen) * 0.015 * alpha.value;
-      const fx = dx / dist * strength;
-      const fy = dy / dist * strength;
-      e.source.vx += fx; e.source.vy += fy;
-      e.target.vx -= fx; e.target.vy -= fy;
-    });
-
-    // Very gentle center gravity — just prevent drift to infinity
-    nodes.forEach(n => {
-      n.vx += (cx - n.x) * 0.00008 * alpha.value;
-      n.vy += (cy - n.y) * 0.00008 * alpha.value;
-    });
-
-    // Apply velocity with damping
-    nodes.forEach(n => {
-      if (n === dragNode) return;
-      n.vx *= 0.55; n.vy *= 0.55;
-      n.x += n.vx; n.y += n.vy;
-    });
-
-    draw();
-    if (running) requestAnimationFrame(simulate);
-  }
-
-  function worldToScreen(wx, wy) {
-    return [(wx - camX) * zoom + W / 2, (wy - camY) * zoom + H / 2];
-  }
-  function screenToWorld(sx, sy) {
-    return [(sx - W / 2) / zoom + camX, (sy - H / 2) / zoom + camY];
-  }
-
+  // ── Draw loop ──
   function draw() {
-    ctx.clearRect(0, 0, W, H);
+    time += 0.016;
+    ctx.fillStyle = '#080b12';
+    ctx.fillRect(0, 0, W, H);
     ctx.save();
     ctx.translate(W / 2, H / 2);
     ctx.scale(zoom, zoom);
     ctx.translate(-camX, -camY);
 
+    // Subtle orbital ring
+    if (!filterPodId && podR > 0) {
+      ctx.beginPath();
+      ctx.arc(0, 0, podR, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    // Gentle floating
+    nodes.forEach(n => {
+      if (n === dragNode) return;
+      n.x = n.baseX + Math.sin(time * 0.3 + n.phase * 1.3) * 1.5;
+      n.y = n.baseY + Math.sin(time * 0.5 + n.phase) * 2;
+    });
+
     // Edges
-    edgeObjs.forEach(e => {
+    edges.forEach(e => {
+      const isHovered = hoveredNode && (e.source === hoveredNode || e.target === hoveredNode ||
+        (hoveredNode.type === 'pod' && e.source === hoveredNode));
       ctx.beginPath();
       ctx.moveTo(e.source.x, e.source.y);
       ctx.lineTo(e.target.x, e.target.y);
-      ctx.strokeStyle = e.source.color + (e.target.type === 'skill' ? '15' : '30');
-      ctx.lineWidth = e.target.type === 'skill' ? 0.6 : 1.5;
+      ctx.strokeStyle = isHovered ? e.source.color + '50' : e.source.color + '15';
+      ctx.lineWidth = isHovered ? 1.2 : 0.6;
       ctx.stroke();
     });
 
-    // Nodes — draw skills first, then roles, then pods on top
-    const drawOrder = [...nodes.filter(n => n.type === 'skill'), ...nodes.filter(n => n.type === 'role'), ...nodes.filter(n => n.type === 'pod')];
-    drawOrder.forEach(n => {
-      const isHovered = hoveredNode === n;
+    // Role nodes
+    nodes.filter(n => n.type === 'role').forEach(n => {
+      const isH = hoveredNode === n;
+      const isParentH = hoveredNode && hoveredNode.type === 'pod' && hoveredNode.id === n.parentPod;
+      const highlight = isH || isParentH;
+      const r = n.r * (isH ? 2 : isParentH ? 1.4 : 1);
+
       ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r * (isHovered ? 1.4 : 1), 0, Math.PI * 2);
-      if (n.type === 'pod') {
-        ctx.fillStyle = n.color;
-        ctx.shadowColor = n.color;
-        ctx.shadowBlur = isHovered ? 30 : 16;
-      } else if (n.type === 'role') {
-        ctx.fillStyle = n.color + 'bb';
-        ctx.shadowColor = n.color;
-        ctx.shadowBlur = isHovered ? 14 : 5;
-      } else {
-        ctx.fillStyle = n.color + '66';
-        ctx.shadowBlur = 0;
-      }
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = n.color + (isH ? 'dd' : isParentH ? '99' : '44');
+      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 10; }
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      // Pod labels: always visible, large and bold
-      if (n.type === 'pod') {
-        ctx.font = '700 14px Inter, sans-serif';
-        ctx.fillStyle = '#ffffff';
+      // Labels: show when hovered, parent hovered, or zoomed in
+      if (highlight || zoom > 1.8) {
+        ctx.font = `${isH ? 600 : 400} ${isH ? 10 : 8}px Inter, sans-serif`;
+        ctx.fillStyle = isH ? '#fff' : isParentH ? '#b0bec5' : '#475569';
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(n.label, n.x, n.y + n.r + 8);
-      }
-      // Role labels: visible when zoomed > 0.5 or hovered
-      else if (n.type === 'role' && (zoom > 0.5 || isHovered)) {
-        ctx.font = '500 10px Inter, sans-serif';
-        ctx.fillStyle = '#cbd5e1';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        const label = n.label.length > 30 ? n.label.slice(0, 28) + '...' : n.label;
-        ctx.fillText(label, n.x, n.y + n.r + 5);
-      }
-      // Skill labels: only when zoomed way in or hovered
-      else if (n.type === 'skill' && (zoom > 1.8 || isHovered)) {
-        ctx.font = '400 8px Inter, sans-serif';
-        ctx.fillStyle = '#64748b';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        const label = n.label.length > 32 ? n.label.slice(0, 30) + '...' : n.label;
-        ctx.fillText(label, n.x, n.y + n.r + 3);
+        const lbl = n.label.length > 26 ? n.label.slice(0, 24) + '..' : n.label;
+        ctx.fillText(lbl, n.x, n.y + r + 10);
       }
     });
 
+    // Pod nodes
+    nodes.filter(n => n.type === 'pod').forEach(n => {
+      const isH = hoveredNode === n;
+      const r = n.r * (isH ? 1.15 : 1);
+
+      // Single glow ring
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = n.color + (isH ? '28' : '10');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Main circle with gradient
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      const grad = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
+      grad.addColorStop(0, '#ffffff28');
+      grad.addColorStop(0.5, n.color);
+      grad.addColorStop(1, n.color + 'bb');
+      ctx.fillStyle = grad;
+      ctx.shadowColor = n.color;
+      ctx.shadowBlur = isH ? 25 : 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Label — always visible
+      ctx.font = '600 12px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#000000aa';
+      ctx.fillText(n.label, n.x + 0.5, n.y + r + 15 + 0.5);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(n.label, n.x, n.y + r + 15);
+    });
+
     ctx.restore();
+    if (running) animFrame = requestAnimationFrame(draw);
   }
 
-  // Tooltip
-  const tooltip = document.getElementById('graph-tooltip');
-  function showTooltip(node, mx, my) {
-    let html = `<h4 style="color:${node.color}">${node.label}</h4>`;
-    if (node.type === 'pod') html += `<p>${node.desc}</p>`;
-    if (node.type === 'skill' && node.subs) {
-      html += `<div class="tt-subs">${node.subs.map(s => `<span class="tt-sub">${s}</span>`).join('')}</div>`;
+  // ── Hover panel ──
+  const hoverPanel = document.getElementById('graph-hover-panel');
+
+  function showHoverPanel(node, mx, my) {
+    let html = '';
+    if (node.type === 'pod') {
+      const pod = node.podData;
+      const totalSkills = pod.roles.reduce((a, r) => a + r.skills.length, 0);
+      const totalSubs = pod.roles.reduce((a, r) => a + r.skills.reduce((b, s) => b + s.subs.length, 0), 0);
+      html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
+        <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">Pod</div>
+        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
+        <div style="font-size:11px; color:#64748b; margin-top:3px;">${node.desc}</div>
+        <div style="font-size:10px; color:#475569; margin-top:5px;">${pod.roles.length} roles · ${totalSkills} skills · ${totalSubs} competencies</div>
+      </div>`;
+      pod.roles.forEach(role => {
+        const sc = role.skills.length;
+        html += `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+          <div style="font-size:11px; font-weight:600; color:#e2e8f0;">${role.name}</div>
+          <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;">
+            ${role.skills.map(s => `<span style="font-size:9px; padding:2px 6px; border-radius:3px; background:${node.color}12; color:${node.color}; border:1px solid ${node.color}20;">${s.name}</span>`).join('')}
+          </div>
+        </div>`;
+      });
+    } else if (node.type === 'role') {
+      const pod = SKILL_GRAPH.find(p => p.id === node.parentPod);
+      const role = node.roleData;
+      html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
+        <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">${pod ? pod.name : 'Role'}</div>
+        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
+        <div style="font-size:10px; color:#475569; margin-top:3px;">${role.skills.length} skills · ${role.skills.reduce((a,s) => a + s.subs.length, 0)} competencies</div>
+      </div>`;
+      if (role) {
+        role.skills.forEach(skill => {
+          html += `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+            <div style="font-size:11px; font-weight:500; color:#cbd5e1;">${skill.name}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:3px;">
+              ${skill.subs.map(s => `<span style="font-size:9px; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.04); color:#64748b;">${s}</span>`).join('')}
+            </div>
+          </div>`;
+        });
+      }
     }
-    const typeLabel = node.type === 'pod' ? 'Pod' : node.type === 'role' ? 'Role' : 'Skill';
-    html = `<p style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px">${typeLabel}</p>` + html;
-    tooltip.innerHTML = html;
-    tooltip.style.display = 'block';
-    const tx = Math.min(mx + 16, W - 340);
-    const ty = Math.min(my + 16, H - 200);
-    tooltip.style.left = tx + 'px';
-    tooltip.style.top = ty + 'px';
+    hoverPanel.innerHTML = html;
+    hoverPanel.style.display = 'block';
+    // Position near cursor, keep on screen
+    let px = mx + 20, py = my - 20;
+    if (px + 320 > window.innerWidth) px = mx - 330;
+    if (py + 440 > window.innerHeight) py = window.innerHeight - 440;
+    if (py < 10) py = 10;
+    hoverPanel.style.left = px + 'px';
+    hoverPanel.style.top = py + 'px';
   }
-  function hideTooltip() { tooltip.style.display = 'none'; }
 
+  function hideHoverPanel() { hoverPanel.style.display = 'none'; }
+
+  // ── Hit detection ──
   function findNode(sx, sy) {
     const [wx, wy] = screenToWorld(sx, sy);
-    let best = null, bestDist = Infinity;
-    for (let i = nodes.length - 1; i >= 0; i--) {
-      const n = nodes[i];
+    // Pods first, then roles
+    const ordered = [...nodes.filter(n => n.type === 'pod'), ...nodes.filter(n => n.type === 'role')];
+    for (const n of ordered) {
       const dx = wx - n.x, dy = wy - n.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      const hitR = Math.max(n.r * 1.5, 8) / zoom;
-      if (dist < hitR && dist < bestDist) { best = n; bestDist = dist; }
+      const hitR = Math.max(n.r * 2, 12);
+      if (dx * dx + dy * dy < hitR * hitR) return n;
     }
-    return best;
+    return null;
   }
 
-  // Mouse events
+  // ── Mouse events ──
   canvas.addEventListener('mousedown', e => {
     const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-    const node = findNode(mx, my);
-    if (node) {
-      dragNode = node;
-      canvas.classList.add('dragging-node');
-      alpha.value = 0.3;
-      if (!running) { running = true; simulate(); }
-    } else {
-      dragging = true;
-    }
+    const node = findNode(e.clientX - rect.left, e.clientY - rect.top);
+    if (node) { dragNode = node; canvas.classList.add('dragging-node'); }
+    else dragging = true;
     lastMouse = { x: e.clientX, y: e.clientY };
   });
 
   canvas.addEventListener('mousemove', e => {
     const rect = canvas.getBoundingClientRect();
     const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-
     if (dragNode) {
       const [wx, wy] = screenToWorld(mx, my);
       dragNode.x = wx; dragNode.y = wy;
-      dragNode.vx = 0; dragNode.vy = 0;
-      if (!running) draw();
+      dragNode.baseX = wx; dragNode.baseY = wy;
     } else if (dragging && lastMouse) {
-      const dx = (e.clientX - lastMouse.x) / zoom;
-      const dy = (e.clientY - lastMouse.y) / zoom;
-      camX -= dx; camY -= dy;
+      camX -= (e.clientX - lastMouse.x) / zoom;
+      camY -= (e.clientY - lastMouse.y) / zoom;
       lastMouse = { x: e.clientX, y: e.clientY };
-      if (!running) draw();
     } else {
       const node = findNode(mx, my);
       if (node !== hoveredNode) {
         hoveredNode = node;
-        if (node) showTooltip(node, e.clientX, e.clientY);
-        else hideTooltip();
-        if (!running) draw();
+        node ? showHoverPanel(node, e.clientX, e.clientY) : hideHoverPanel();
       } else if (node) {
-        showTooltip(node, e.clientX, e.clientY);
+        showHoverPanel(node, e.clientX, e.clientY);
       }
     }
   });
 
-  canvas.addEventListener('mouseup', () => {
-    dragging = false;
-    dragNode = null;
-    lastMouse = null;
-    canvas.classList.remove('dragging-node');
-  });
-
-  canvas.addEventListener('mouseleave', () => {
-    dragging = false; dragNode = null; lastMouse = null; hoveredNode = null;
-    hideTooltip();
-    canvas.classList.remove('dragging-node');
-    if (!running) draw();
-  });
+  canvas.addEventListener('mouseup', () => { dragging = false; dragNode = null; lastMouse = null; canvas.classList.remove('dragging-node'); });
+  canvas.addEventListener('mouseleave', () => { dragging = false; dragNode = null; lastMouse = null; hoveredNode = null; hideHoverPanel(); canvas.classList.remove('dragging-node'); });
 
   canvas.addEventListener('wheel', e => {
     e.preventDefault();
-    const zoomFactor = e.deltaY > 0 ? 0.92 : 1.08;
-    zoom = Math.max(0.15, Math.min(8, zoom * zoomFactor));
-    if (!running) draw();
+    const rect = canvas.getBoundingClientRect();
+    const [wx, wy] = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+    zoom = Math.max(0.3, Math.min(8, zoom * (e.deltaY > 0 ? 0.9 : 1.11)));
+    camX = wx - (e.clientX - rect.left - W / 2) / zoom;
+    camY = wy - (e.clientY - rect.top - H / 2) / zoom;
   }, { passive: false });
 
   canvas.addEventListener('dblclick', e => {
     const rect = canvas.getBoundingClientRect();
     const node = findNode(e.clientX - rect.left, e.clientY - rect.top);
-    if (node) {
-      if (node.type === 'pod') {
-        setState({ view: 'pod', activePod: node.id, search: '' });
-      } else if (node.type === 'role') {
-        setState({ view: 'role', activePod: node.parentPod, activeRole: node.id, search: '' });
-      } else if (node.type === 'skill') {
-        setState({ view: 'role', activePod: node.parentPod, activeRole: node.parentRole, search: '' });
-        setTimeout(() => setState({ expandedSkills: { ...state.expandedSkills, [node.id]: true } }), 50);
-      }
-    }
+    if (!node) return;
+    if (node.type === 'pod') setState({ view: 'pod', activePod: node.id, search: '' });
+    else if (node.type === 'role') setState({ view: 'role', activePod: node.parentPod, activeRole: node.id, search: '' });
   });
 
-  // Zoom controls
-  window.graphZoomIn = () => { zoom = Math.min(8, zoom * 1.3); if (!running) draw(); };
-  window.graphZoomOut = () => { zoom = Math.max(0.15, zoom * 0.7); if (!running) draw(); };
-  window.graphReset = () => { zoom = 1; camX = 0; camY = 0; alpha.value = 1; if (!running) { running = true; simulate(); } else draw(); };
+  window.graphZoomIn = () => { zoom = Math.min(8, zoom * 1.3); };
+  window.graphZoomOut = () => { zoom = Math.max(0.3, zoom * 0.77); };
+  window.graphReset = () => { zoom = 1; camX = 0; camY = 0; };
 
-  // Window resize
-  const onResize = () => { resize(); if (!running) draw(); };
+  const onResize = () => resize();
   window.addEventListener('resize', onResize);
+  graphSim = { stop: () => { running = false; cancelAnimationFrame(animFrame); window.removeEventListener('resize', onResize); hideHoverPanel(); } };
 
-  // Cleanup reference
-  graphSim = { stop: () => { running = false; window.removeEventListener('resize', onResize); } };
-
-  // Start
-  simulate();
+  draw();
 }
 
 function setState(updates) {
@@ -1437,6 +1384,7 @@ function renderGraph() {
       <div class="graph-filter-bar">${filterChips}</div>
       <canvas id="graph-canvas"></canvas>
       <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
+      <div id="graph-hover-panel" class="graph-hover-panel" style="display:none"></div>
       <div class="graph-legend">
         <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6366f1"></span> Pod</span>
         <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1aa"></span> Role</span>
