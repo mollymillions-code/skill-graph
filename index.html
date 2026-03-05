@@ -66,21 +66,21 @@ tailwind.config = {
 
   .graph-tooltip { display: none !important; }
 
-  .graph-hover-panel { position: fixed; z-index: 100; background: rgba(12,15,25,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px 18px; pointer-events: none; width: 300px; max-height: 420px; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.7); }
+  .graph-hover-panel { position: fixed; z-index: 100; background: rgba(245,240,232,0.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(120,100,80,0.12); border-radius: 12px; padding: 16px 18px; pointer-events: none; width: 300px; max-height: 420px; overflow-y: auto; box-shadow: 0 8px 32px rgba(80,60,40,0.12); }
   .graph-hover-panel::-webkit-scrollbar { width: 3px; }
-  .graph-hover-panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .graph-hover-panel::-webkit-scrollbar-thumb { background: rgba(120,100,80,0.2); border-radius: 2px; }
 
   .view-toggle { display: flex; gap: 2px; background: rgba(255,255,255,0.04); border-radius: 6px; padding: 2px; border: 1px solid rgba(255,255,255,0.06); }
   .view-toggle button { padding: 4px 12px; border-radius: 4px; font-size: 11px; font-weight: 500; color: #64748b; background: transparent; border: none; cursor: pointer; transition: all 0.15s; }
   .view-toggle button.active { background: rgba(255,255,255,0.08); color: #e2e8f0; }
   .view-toggle button:hover:not(.active) { color: #94a3b8; }
 
-  .graph-legend { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 16px; font-size: 11px; color: #64748b; z-index: 10; }
+  .graph-legend { position: absolute; bottom: 20px; left: 20px; display: flex; gap: 16px; font-size: 11px; color: #8b7d6b; z-index: 10; }
   .graph-legend span { display: flex; align-items: center; gap: 5px; }
 
   .graph-controls { position: absolute; bottom: 20px; right: 20px; display: flex; gap: 4px; z-index: 10; }
-  .graph-controls button { width: 32px; height: 32px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #94a3b8; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-  .graph-controls button:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+  .graph-controls button { width: 32px; height: 32px; border-radius: 6px; background: rgba(120,100,80,0.06); border: 1px solid rgba(120,100,80,0.12); color: #6b5d4f; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .graph-controls button:hover { background: rgba(120,100,80,0.12); color: #2d2418; }
 
   .graph-filter-bar { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; gap: 4px; flex-wrap: wrap; z-index: 10; }
   .graph-filter-chip { padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 500; cursor: pointer; border: 1px solid; transition: all 0.15s; opacity: 0.5; }
@@ -98,7 +98,7 @@ const SKILL_GRAPH = [
   {
     id: 'brand-strategy',
     name: 'Brand & Strategy',
-    color: '#6366f1',
+    color: '#b08968',
     description: 'Positioning, messaging, GTM, and growth architecture',
     roles: [
       {
@@ -126,7 +126,7 @@ const SKILL_GRAPH = [
   {
     id: 'content-creative',
     name: 'Content & Creative',
-    color: '#f43f5e',
+    color: '#c2847a',
     description: 'Copywriting, design, video, photography, and content strategy',
     roles: [
       {
@@ -203,7 +203,7 @@ const SKILL_GRAPH = [
   {
     id: 'performance-paid',
     name: 'Performance & Paid Media',
-    color: '#f97316',
+    color: '#d4a574',
     description: 'Google Ads, Meta Ads, TikTok, LinkedIn, programmatic, and display',
     roles: [
       {
@@ -241,7 +241,7 @@ const SKILL_GRAPH = [
   {
     id: 'seo-organic',
     name: 'SEO & Organic',
-    color: '#22c55e',
+    color: '#9cab8a',
     description: 'Technical SEO, on-page, link building, and AI search optimization',
     roles: [
       {
@@ -279,7 +279,7 @@ const SKILL_GRAPH = [
   {
     id: 'email-lifecycle',
     name: 'Email & Lifecycle',
-    color: '#a855f7',
+    color: '#a08d9e',
     description: 'Email marketing, automation flows, CRM, and lead nurturing',
     roles: [
       {
@@ -308,7 +308,7 @@ const SKILL_GRAPH = [
   {
     id: 'social-media',
     name: 'Social Media',
-    color: '#06b6d4',
+    color: '#8fa8a0',
     description: 'Social strategy, content planning, community, and growth',
     roles: [
       {
@@ -335,7 +335,7 @@ const SKILL_GRAPH = [
   {
     id: 'influencer-partnerships',
     name: 'Influencer & Partnerships',
-    color: '#ec4899',
+    color: '#c9a087',
     description: 'Influencer marketing, PR, earned media, and brand partnerships',
     roles: [
       {
@@ -362,7 +362,7 @@ const SKILL_GRAPH = [
   {
     id: 'web-conversion',
     name: 'Web & Conversion',
-    color: '#eab308',
+    color: '#c4a35a',
     description: 'Web development, CRO, A/B testing, UX/UI, and tracking',
     roles: [
       {
@@ -399,7 +399,7 @@ const SKILL_GRAPH = [
   {
     id: 'analytics-data',
     name: 'Analytics & Data',
-    color: '#14b8a6',
+    color: '#7a9e8e',
     description: 'Marketing analytics, attribution, data engineering, and BI',
     roles: [
       {
@@ -425,7 +425,7 @@ const SKILL_GRAPH = [
   {
     id: 'events-experiential',
     name: 'Events & Experiential',
-    color: '#64748b',
+    color: '#8b8178',
     description: 'Event marketing, webinars, trade shows, and experiential',
     roles: [
       {
@@ -442,7 +442,7 @@ const SKILL_GRAPH = [
   {
     id: 'crm-pipeline',
     name: 'CRM & Pipeline (Twenty)',
-    color: '#3b82f6',
+    color: '#8a9bb5',
     description: 'Lead management, deal tracking, company relationships, tasks, and CRM schema design via Twenty CRM',
     roles: [
       {
@@ -481,7 +481,7 @@ const SKILL_GRAPH = [
   {
     id: 'customer-support',
     name: 'Customer Support (Chatwoot)',
-    color: '#ef4444',
+    color: '#bf8b7e',
     description: 'Conversation management, agent routing, team operations, and support analytics via Chatwoot',
     roles: [
       {
@@ -531,7 +531,7 @@ const SKILL_GRAPH = [
   {
     id: 'platform-automation',
     name: 'Platform Automation (Zavis)',
-    color: '#10b981',
+    color: '#7d9b8a',
     description: 'Workflow automation, job scheduling, cross-platform pipelines, and event-driven scripting',
     roles: [
       {
@@ -569,7 +569,7 @@ const SKILL_GRAPH = [
   {
     id: 'client-onboarding',
     name: 'Client Onboarding (Zavis)',
-    color: '#f59e0b',
+    color: '#c8a96e',
     description: 'New client registration, contract setup, channel provisioning, and go-live workflows',
     roles: [
       {
@@ -604,7 +604,7 @@ const SKILL_GRAPH = [
   {
     id: 'financial-ops',
     name: 'Financial Operations (Zavis)',
-    color: '#8b5cf6',
+    color: '#9a8aad',
     description: 'Invoicing, payments, revenue tracking, partner commissions, payroll, and financial modeling',
     roles: [
       {
@@ -642,7 +642,7 @@ const SKILL_GRAPH = [
   {
     id: 'email-comms-plunk',
     name: 'Email & Communications (Plunk)',
-    color: '#0ea5e9',
+    color: '#8da7b8',
     description: 'Transactional email, campaign management, event tracking, and subscriber operations via Plunk',
     roles: [
       {
@@ -669,7 +669,7 @@ const SKILL_GRAPH = [
   {
     id: 'zavis-platform',
     name: 'Zavis Platform & Product',
-    color: '#00c853',
+    color: '#7da882',
     description: 'Patient success platform operations, AI agents, WhatsApp workflows, and healthcare marketing',
     roles: [
       {
@@ -715,7 +715,7 @@ const SKILL_GRAPH = [
 
 // ─── STATE ────────────────────────────────────────────────────────────
 let state = {
-  view: 'overview', // 'overview' | 'pod' | 'role' | 'graph'
+  view: 'graph', // 'overview' | 'pod' | 'role' | 'graph'
   activePod: null,
   activeRole: null,
   expandedSkills: {},
@@ -754,7 +754,7 @@ function initGraph(filterPodId) {
 
   // ── Center hub ──
   const hubNode = !filterPodId ? { id: '_hub', label: 'THE GIGA MARKETING TEAM', type: 'hub',
-    color: '#a78bfa', r: 55, x: 0, y: 0, baseX: 0, baseY: 0, phase: 0 } : null;
+    color: '#9e7b5a', r: 55, x: 0, y: 0, baseX: 0, baseY: 0, phase: 0 } : null;
   if (hubNode) nodes.push(hubNode);
 
   // ── Expansive layout — spread everything out ──
@@ -815,7 +815,13 @@ function initGraph(filterPodId) {
   // ── Draw ──
   function draw() {
     time += 0.016;
-    ctx.fillStyle = '#080b12';
+
+    // Cream gradient background
+    const bg = ctx.createLinearGradient(0, 0, W * 0.3, H);
+    bg.addColorStop(0, '#f5f0e8');
+    bg.addColorStop(0.5, '#efe8db');
+    bg.addColorStop(1, '#e8e0d0');
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, W, H);
 
     // Gentle floating
@@ -838,93 +844,105 @@ function initGraph(filterPodId) {
       ctx.moveTo(e.source.x, e.source.y);
       ctx.lineTo(e.target.x, e.target.y);
       if (e.level === 0) {
-        ctx.strokeStyle = isH ? '#ffffff30' : '#ffffff08';
+        ctx.strokeStyle = isH ? 'rgba(120,100,80,0.25)' : 'rgba(120,100,80,0.08)';
         ctx.lineWidth = isH ? 2.5 : 1.2;
       } else if (e.level === 1) {
-        ctx.strokeStyle = isH ? e.source.color + '55' : e.source.color + '1a';
+        ctx.strokeStyle = isH ? e.source.color + '50' : e.source.color + '22';
         ctx.lineWidth = isH ? 1.5 : 0.8;
       } else {
-        ctx.strokeStyle = isH ? e.source.color + '44' : e.source.color + '0e';
+        ctx.strokeStyle = isH ? e.source.color + '40' : e.source.color + '14';
         ctx.lineWidth = isH ? 1 : 0.5;
       }
       ctx.stroke();
     });
 
-    // Skill nodes
+    // Skill nodes — smooth pastel circles
     nodes.filter(n => n.type === 'skill').forEach(n => {
       const isH = hoveredNode === n;
       const isParentH = hoveredNode && hoveredNode.type === 'role' && hoveredNode.id === n.parentRole;
       const r = n.r * (isH ? 2 : isParentH ? 1.4 : 1);
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = n.color + (isH ? 'cc' : isParentH ? '88' : '35');
-      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 10; }
+      const sg = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
+      sg.addColorStop(0, n.color + (isH ? 'ff' : 'cc'));
+      sg.addColorStop(1, n.color + (isH ? 'cc' : '77'));
+      ctx.fillStyle = sg;
+      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 8; }
       ctx.fill();
       ctx.shadowBlur = 0;
     });
 
-    // Role nodes
+    // Role nodes — metallic pastel spheres
     nodes.filter(n => n.type === 'role').forEach(n => {
       const isH = hoveredNode === n;
       const isParentH = hoveredNode && hoveredNode.type === 'pod' && hoveredNode.id === n.parentPod;
       const r = n.r * (isH ? 1.4 : isParentH ? 1.2 : 1);
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      ctx.fillStyle = n.color + (isH ? 'dd' : isParentH ? '99' : '55');
-      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 16; }
+      const rg = ctx.createRadialGradient(n.x - r * 0.35, n.y - r * 0.35, r * 0.1, n.x, n.y, r);
+      rg.addColorStop(0, '#ffffff');
+      rg.addColorStop(0.3, n.color + (isH ? 'ee' : 'cc'));
+      rg.addColorStop(1, n.color + (isH ? 'bb' : '88'));
+      ctx.fillStyle = rg;
+      if (isH) { ctx.shadowColor = n.color; ctx.shadowBlur = 14; }
       ctx.fill();
       ctx.shadowBlur = 0;
     });
 
-    // Pod nodes
+    // Pod nodes — large metallic spheres with specular highlight
     nodes.filter(n => n.type === 'pod').forEach(n => {
       const isH = hoveredNode === n;
       const r = n.r * (isH ? 1.15 : 1);
+      // Subtle outer ring
       ctx.beginPath();
-      ctx.arc(n.x, n.y, r + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = n.color + (isH ? '30' : '14');
-      ctx.lineWidth = 1.5;
+      ctx.arc(n.x, n.y, r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = n.color + (isH ? '40' : '25');
+      ctx.lineWidth = 1;
       ctx.stroke();
+      // Metallic sphere gradient
       ctx.beginPath();
       ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-      const g = ctx.createRadialGradient(n.x - r * 0.3, n.y - r * 0.3, 0, n.x, n.y, r);
-      g.addColorStop(0, '#ffffff25');
-      g.addColorStop(0.5, n.color);
-      g.addColorStop(1, n.color + 'bb');
+      const g = ctx.createRadialGradient(n.x - r * 0.35, n.y - r * 0.35, r * 0.05, n.x + r * 0.1, n.y + r * 0.1, r);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.2, '#ffffffcc');
+      g.addColorStop(0.45, n.color);
+      g.addColorStop(0.85, n.color + 'cc');
+      g.addColorStop(1, n.color + '88');
       ctx.fillStyle = g;
-      ctx.shadowColor = n.color;
-      ctx.shadowBlur = isH ? 30 : 14;
+      ctx.shadowColor = n.color + '66';
+      ctx.shadowBlur = isH ? 20 : 8;
       ctx.fill();
       ctx.shadowBlur = 0;
     });
 
-    // Hub node
+    // Hub node — warm bronze/copper metallic sphere
     if (hubNode) {
       const r = hubNode.r;
       for (let i = 4; i >= 1; i--) {
         ctx.beginPath();
         ctx.arc(0, 0, r + i * 18, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(167,139,250,${0.02 + i * 0.015})`;
-        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = `rgba(176,137,104,${0.04 + i * 0.02})`;
+        ctx.lineWidth = 1;
         ctx.stroke();
       }
       ctx.beginPath();
       ctx.arc(0, 0, r, 0, Math.PI * 2);
-      const hg = ctx.createRadialGradient(-r * 0.3, -r * 0.3, 0, 0, 0, r);
+      const hg = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.05, r * 0.1, r * 0.1, r);
       hg.addColorStop(0, '#ffffff');
-      hg.addColorStop(0.25, '#c4b5fd');
-      hg.addColorStop(0.55, '#7c3aed');
-      hg.addColorStop(1, '#4c1d95');
+      hg.addColorStop(0.15, '#f5e6d3');
+      hg.addColorStop(0.4, '#c9a87c');
+      hg.addColorStop(0.7, '#9e7b5a');
+      hg.addColorStop(1, '#7a5c3e');
       ctx.fillStyle = hg;
-      ctx.shadowColor = '#7c3aed';
-      ctx.shadowBlur = 50;
+      ctx.shadowColor = 'rgba(158,123,90,0.4)';
+      ctx.shadowBlur = 30;
       ctx.fill();
       ctx.shadowBlur = 0;
     }
 
     ctx.restore();
 
-    // ── Screen-space labels (always readable, not scaled by zoom) ──
+    // ── Screen-space labels — dark text on cream ──
 
     // Hub label
     if (hubNode) {
@@ -933,17 +951,17 @@ function initGraph(filterPodId) {
       ctx.textAlign = 'center';
       if (sr > 8) {
         ctx.font = '900 15px Inter, sans-serif';
-        ctx.fillStyle = '#ffffffdd';
+        ctx.fillStyle = '#3d2e1e';
         ctx.fillText('THE GIGA', hx, hy - 3);
         ctx.fillText('MARKETING TEAM', hx, hy + 14);
       } else {
         ctx.font = '800 11px Inter, sans-serif';
-        ctx.fillStyle = '#ffffffbb';
+        ctx.fillStyle = '#5a4633';
         ctx.fillText('GIGA MARKETING', hx, hy + 4);
       }
     }
 
-    // Pod labels — always visible
+    // Pod labels — always visible, dark text
     nodes.filter(n => n.type === 'pod').forEach(n => {
       const [sx, sy] = worldToScreen(n.x, n.y);
       if (sx < -150 || sx > W + 150 || sy < -50 || sy > H + 50) return;
@@ -951,9 +969,7 @@ function initGraph(filterPodId) {
       const isH = hoveredNode === n;
       ctx.textAlign = 'center';
       ctx.font = `${isH ? 800 : 700} 13px Inter, sans-serif`;
-      ctx.fillStyle = '#000000aa';
-      ctx.fillText(n.label, sx + 0.5, sy + sr + 16 + 0.5);
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = isH ? '#1a1410' : '#2d2418';
       ctx.fillText(n.label, sx, sy + sr + 16);
     });
 
@@ -967,7 +983,7 @@ function initGraph(filterPodId) {
         const isParentH = hoveredNode && hoveredNode.type === 'pod' && hoveredNode.id === n.parentPod;
         ctx.textAlign = 'center';
         ctx.font = `${isH ? 600 : 500} ${isH ? 11 : 10}px Inter, sans-serif`;
-        ctx.fillStyle = isH ? '#ffffff' : isParentH ? '#cbd5e1' : '#8892a4';
+        ctx.fillStyle = isH ? '#1a1410' : isParentH ? '#3d2e1e' : '#6b5d4f';
         const lbl = n.label.length > 30 ? n.label.slice(0, 28) + '..' : n.label;
         ctx.fillText(lbl, sx, sy + sr + 13);
       });
@@ -983,7 +999,7 @@ function initGraph(filterPodId) {
         const isParentH = hoveredNode && hoveredNode.type === 'role' && hoveredNode.id === n.parentRole;
         ctx.textAlign = 'center';
         ctx.font = `${isH ? 600 : 400} ${isH ? 10 : 9}px Inter, sans-serif`;
-        ctx.fillStyle = isH ? '#e2e8f0' : isParentH ? '#94a3b8' : '#556270';
+        ctx.fillStyle = isH ? '#1a1410' : isParentH ? '#5a4633' : '#8b7d6b';
         const lbl = n.label.length > 26 ? n.label.slice(0, 24) + '..' : n.label;
         ctx.fillText(lbl, sx, sy + sr + 10);
       });
@@ -999,26 +1015,26 @@ function initGraph(filterPodId) {
     let html = '';
     if (node.type === 'hub') {
       const stats = getStats();
-      html = `<div style="border-bottom:2px solid #7c3aed; padding-bottom:8px; margin-bottom:10px;">
-        <div style="font-size:15px; font-weight:800; color:#fff;">THE GIGA MARKETING TEAM</div>
-        <div style="font-size:11px; color:#a78bfa; margin-top:4px;">AI Agent Capability Map</div>
+      html = `<div style="border-bottom:2px solid #9e7b5a; padding-bottom:8px; margin-bottom:10px;">
+        <div style="font-size:15px; font-weight:800; color:#2d2418;">THE GIGA MARKETING TEAM</div>
+        <div style="font-size:11px; color:#9e7b5a; margin-top:4px;">AI Agent Capability Map</div>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
-          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.pods}</div>
-          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Pods</div>
+        <div style="background:rgba(158,123,90,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#7a5c3e;">${stats.pods}</div>
+          <div style="font-size:9px; color:#9e7b5a; text-transform:uppercase; letter-spacing:1px;">Pods</div>
         </div>
-        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
-          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.roles}</div>
-          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Roles</div>
+        <div style="background:rgba(158,123,90,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#7a5c3e;">${stats.roles}</div>
+          <div style="font-size:9px; color:#9e7b5a; text-transform:uppercase; letter-spacing:1px;">Roles</div>
         </div>
-        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
-          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.skills}</div>
-          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Skills</div>
+        <div style="background:rgba(158,123,90,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#7a5c3e;">${stats.skills}</div>
+          <div style="font-size:9px; color:#9e7b5a; text-transform:uppercase; letter-spacing:1px;">Skills</div>
         </div>
-        <div style="background:rgba(124,58,237,0.1); padding:8px; border-radius:6px; text-align:center;">
-          <div style="font-size:18px; font-weight:800; color:#c4b5fd;">${stats.subs}</div>
-          <div style="font-size:9px; color:#7c3aed; text-transform:uppercase; letter-spacing:1px;">Competencies</div>
+        <div style="background:rgba(158,123,90,0.1); padding:8px; border-radius:6px; text-align:center;">
+          <div style="font-size:18px; font-weight:800; color:#7a5c3e;">${stats.subs}</div>
+          <div style="font-size:9px; color:#9e7b5a; text-transform:uppercase; letter-spacing:1px;">Competencies</div>
         </div>
       </div>`;
     } else if (node.type === 'pod') {
@@ -1027,13 +1043,13 @@ function initGraph(filterPodId) {
       const totalSubs = pod.roles.reduce((a, r) => a + r.skills.reduce((b, s) => b + s.subs.length, 0), 0);
       html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
         <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">Pod</div>
-        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
-        <div style="font-size:11px; color:#64748b; margin-top:3px;">${node.desc}</div>
-        <div style="font-size:10px; color:#475569; margin-top:5px;">${pod.roles.length} roles · ${totalSkills} skills · ${totalSubs} competencies</div>
+        <div style="font-size:14px; font-weight:700; color:#2d2418;">${node.label}</div>
+        <div style="font-size:11px; color:#6b5d4f; margin-top:3px;">${node.desc}</div>
+        <div style="font-size:10px; color:#8b7d6b; margin-top:5px;">${pod.roles.length} roles · ${totalSkills} skills · ${totalSubs} competencies</div>
       </div>`;
       pod.roles.forEach(role => {
-        html += `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-          <div style="font-size:11px; font-weight:600; color:#e2e8f0;">${role.name}</div>
+        html += `<div style="padding:5px 0; border-bottom:1px solid rgba(120,100,80,0.08);">
+          <div style="font-size:11px; font-weight:600; color:#2d2418;">${role.name}</div>
           <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:4px;">
             ${role.skills.map(s => `<span style="font-size:9px; padding:2px 6px; border-radius:3px; background:${node.color}12; color:${node.color}; border:1px solid ${node.color}20;">${s.name}</span>`).join('')}
           </div>
@@ -1044,15 +1060,15 @@ function initGraph(filterPodId) {
       const role = node.roleData;
       html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
         <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">${pod ? pod.name : 'Role'}</div>
-        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
-        <div style="font-size:10px; color:#475569; margin-top:3px;">${role.skills.length} skills · ${role.skills.reduce((a, s) => a + s.subs.length, 0)} competencies</div>
+        <div style="font-size:14px; font-weight:700; color:#2d2418;">${node.label}</div>
+        <div style="font-size:10px; color:#8b7d6b; margin-top:3px;">${role.skills.length} skills · ${role.skills.reduce((a, s) => a + s.subs.length, 0)} competencies</div>
       </div>`;
       if (role) {
         role.skills.forEach(skill => {
-          html += `<div style="padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
-            <div style="font-size:11px; font-weight:500; color:#cbd5e1;">${skill.name}</div>
+          html += `<div style="padding:5px 0; border-bottom:1px solid rgba(120,100,80,0.08);">
+            <div style="font-size:11px; font-weight:500; color:#3d2e1e;">${skill.name}</div>
             <div style="display:flex; flex-wrap:wrap; gap:3px; margin-top:3px;">
-              ${skill.subs.map(s => `<span style="font-size:9px; padding:1px 5px; border-radius:3px; background:rgba(255,255,255,0.04); color:#64748b;">${s}</span>`).join('')}
+              ${skill.subs.map(s => `<span style="font-size:9px; padding:1px 5px; border-radius:3px; background:rgba(120,100,80,0.06); color:#6b5d4f;">${s}</span>`).join('')}
             </div>
           </div>`;
         });
@@ -1061,11 +1077,11 @@ function initGraph(filterPodId) {
       const pod = SKILL_GRAPH.find(p => p.id === node.parentPod);
       html = `<div style="border-bottom:2px solid ${node.color}; padding-bottom:8px; margin-bottom:10px;">
         <div style="color:${node.color}; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:3px">${pod ? pod.name : 'Skill'}</div>
-        <div style="font-size:14px; font-weight:700; color:#fff;">${node.label}</div>
-        <div style="font-size:10px; color:#475569; margin-top:3px;">${node.subs.length} atomic competencies</div>
+        <div style="font-size:14px; font-weight:700; color:#2d2418;">${node.label}</div>
+        <div style="font-size:10px; color:#8b7d6b; margin-top:3px;">${node.subs.length} atomic competencies</div>
       </div>
       <div style="display:flex; flex-wrap:wrap; gap:4px;">
-        ${node.subs.map(s => `<span style="font-size:10px; padding:3px 8px; border-radius:4px; background:${node.color}12; color:${node.color}; border:1px solid ${node.color}20;">${s}</span>`).join('')}
+        ${node.subs.map(s => `<span style="font-size:10px; padding:3px 8px; border-radius:4px; background:${node.color}15; color:#3d2e1e; border:1px solid ${node.color}25;">${s}</span>`).join('')}
       </div>`;
     }
     hoverPanel.innerHTML = html;
@@ -1261,27 +1277,27 @@ function renderHeader() {
   const stats = getStats();
   const breadcrumbs = buildBreadcrumbs();
   return `
-    <header class="border-b border-white/[0.06] bg-[#0a0e17]/80 backdrop-blur-md sticky top-0 z-50">
+    <header class="border-b backdrop-blur-md sticky top-0 z-50" style="border-color: rgba(120,100,80,0.1); background: ${state.view === 'graph' ? 'rgba(245,240,232,0.85)' : 'rgba(10,14,23,0.8)'}">
       <div class="max-w-[1400px] mx-auto px-6 py-4">
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, #6366f1, #f43f5e)">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background: ${state.view === 'graph' ? 'linear-gradient(135deg, #b08968, #9e7b5a)' : 'linear-gradient(135deg, #6366f1, #f43f5e)'}">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4m-7.07-15.07 2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>
             </div>
             <div>
-              <h1 class="text-lg font-bold text-white tracking-tight">Marketing Skill Graph</h1>
-              <p class="text-[11px] text-slate-500 tracking-wide uppercase">AI Agent Capability Map</p>
+              <h1 class="text-lg font-bold tracking-tight" style="color:${state.view === 'graph' ? '#2d2418' : '#fff'}">Marketing Skill Graph</h1>
+              <p class="text-[11px] tracking-wide uppercase" style="color:${state.view === 'graph' ? '#8b7d6b' : '#64748b'}">AI Agent Capability Map</p>
             </div>
           </div>
           <div class="flex items-center gap-6">
-            <div class="hidden sm:flex items-center gap-4 text-xs text-slate-500">
-              <span><span class="stat-number text-white font-semibold">${stats.pods}</span> pods</span>
-              <span class="text-slate-700">|</span>
-              <span><span class="stat-number text-white font-semibold">${stats.roles}</span> roles</span>
-              <span class="text-slate-700">|</span>
-              <span><span class="stat-number text-white font-semibold">${stats.skills}</span> skills</span>
-              <span class="text-slate-700">|</span>
-              <span><span class="stat-number text-white font-semibold">${stats.subs}</span> atomic competencies</span>
+            <div class="hidden sm:flex items-center gap-4 text-xs" style="color:${state.view === 'graph' ? '#8b7d6b' : '#64748b'}">
+              <span><span class="stat-number font-semibold" style="color:${state.view === 'graph' ? '#2d2418' : '#fff'}">${stats.pods}</span> pods</span>
+              <span style="color:${state.view === 'graph' ? '#c4b5a0' : '#334155'}">|</span>
+              <span><span class="stat-number font-semibold" style="color:${state.view === 'graph' ? '#2d2418' : '#fff'}">${stats.roles}</span> roles</span>
+              <span style="color:${state.view === 'graph' ? '#c4b5a0' : '#334155'}">|</span>
+              <span><span class="stat-number font-semibold" style="color:${state.view === 'graph' ? '#2d2418' : '#fff'}">${stats.skills}</span> skills</span>
+              <span style="color:${state.view === 'graph' ? '#c4b5a0' : '#334155'}">|</span>
+              <span><span class="stat-number font-semibold" style="color:${state.view === 'graph' ? '#2d2418' : '#fff'}">${stats.subs}</span> atomic competencies</span>
             </div>
             <div class="view-toggle">
               <button class="${state.view !== 'graph' ? 'active' : ''}" onclick="if(state.view==='graph'){setState({view:'overview',activePod:null,activeRole:null})}">Cards</button>
@@ -1290,7 +1306,7 @@ function renderHeader() {
             <input
               type="text"
               placeholder="Search skills..."
-              class="search-input w-48 px-3 py-1.5 rounded-md text-sm text-slate-300 placeholder:text-slate-600"
+              class="search-input w-48 px-3 py-1.5 rounded-md text-sm" style="color:${state.view === 'graph' ? '#2d2418' : '#cbd5e1'}; background:${state.view === 'graph' ? 'rgba(120,100,80,0.06)' : 'rgba(255,255,255,0.04)'}; border-color:${state.view === 'graph' ? 'rgba(120,100,80,0.12)' : 'rgba(255,255,255,0.08)'}"
               value="${state.search}"
               oninput="setState({ search: this.value, view: this.value.length >= 2 ? 'search' : (state.activePod ? (state.activeRole ? 'role' : 'pod') : 'overview') })"
             />
@@ -1528,10 +1544,10 @@ function renderGraph() {
       <div id="graph-tooltip" class="graph-tooltip" style="display:none"></div>
       <div id="graph-hover-panel" class="graph-hover-panel" style="display:none"></div>
       <div class="graph-legend">
-        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#6366f1"></span> Pod</span>
-        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#6366f1aa"></span> Role</span>
-        <span><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#6366f155"></span> Skill</span>
-        <span style="color:#475569">Scroll to zoom &middot; Drag to pan &middot; Drag nodes &middot; Double-click to open</span>
+        <span><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#b08968"></span> Pod</span>
+        <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#b08968aa"></span> Role</span>
+        <span><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#b0896888"></span> Skill</span>
+        <span style="color:#8b7d6b">Scroll to zoom &middot; Drag to pan &middot; Drag nodes &middot; Double-click to open</span>
       </div>
       <div class="graph-controls">
         <button onclick="graphZoomIn()" title="Zoom in">+</button>
